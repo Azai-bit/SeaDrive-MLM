@@ -5,7 +5,6 @@ SeaDrive-MLM is a ROS/Gazebo workspace for USV COLREG encounter simulation and M
 - `Geo`: geometry and local-planner baseline.
 - `Local`: local OpenAI-compatible VLM/LLM service for COLREG decisions.
 
-Build products, logs, Monte Carlo outputs, credentials, generated datasets, and training artifacts are intentionally excluded from the repository.
 
 ## Requirements
 
@@ -15,12 +14,6 @@ Build products, logs, Monte Carlo outputs, credentials, generated datasets, and 
 - Python 3 packages used by the runtime nodes, including `numpy`, `Pillow`, `opencv-python`, and ROS Python packages.
 - For `Local` mode, a local OpenAI-compatible chat/completions endpoint that can accept the configured VLM model.
 
-Install common ROS dependencies with your normal ROS package manager setup, for example:
-
-```bash
-sudo apt update
-sudo apt install python3-catkin-tools ros-noetic-desktop-full ros-noetic-gazebo-ros-pkgs
-```
 
 ## Build
 
@@ -30,8 +23,6 @@ From the repository root:
 catkin build -j2
 source devel/setup.bash
 ```
-
-The runner also checks for `devel/setup.bash` and will ask you to build first if it is missing.
 
 ## Run Monte Carlo
 
@@ -76,9 +67,3 @@ tmp/monte_carlo/<timestamp>_<scenario>_<mode>/
 ```
 
 Important files include `results.csv`, `summary.txt`, per-trial trajectory CSVs, optional VLA event logs, and optional trajectory plots.
-
-## Notes
-
-- Do not commit generated `build/`, `devel/`, `logs/`, or `tmp/` directories.
-- Do not commit API keys or local service credentials. Configure them through environment variables.
-- Historical experiment results and model-training outputs are not part of this repository; regenerate them locally when needed.
