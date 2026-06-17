@@ -19,15 +19,16 @@ Monte Carlo trajectory playback:
 
 ![Monte Carlo trajectory animation](assets/traj.gif)
 
-VLM-based COLREG decision example:
 
-![VLM decision example](assets/VLM.png)
+
 
 ## VLM Call Example
 
 The `Local` mode talks to an OpenAI-compatible local VLM/LLM endpoint. In the demo shown here, the model `qwen3-vl-2b-instruct-local` is served with the vLLM model loading and inference framework.
 
 Example request context:
+
+![VLM decision example](assets/VLM.png)
 
 ```text
 ===== LLM INPUT call_id=3 =====
