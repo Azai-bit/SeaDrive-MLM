@@ -57,3 +57,5 @@ src/fuel_planner/utils/lkh_tsp_solver/resource/rl_*.txt
 vla_snapshots/
 *.gif
 *.mp4
+!assets/
+!assets/*.gif

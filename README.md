@@ -5,6 +5,19 @@ SeaDrive-MLM is a ROS/Gazebo workspace for USV COLREG encounter simulation and M
 - `Geo`: geometry and local-planner baseline.
 - `Local`: local OpenAI-compatible VLM/LLM service for COLREG decisions.
 
+## Demo
+
+Gazebo encounter simulation:
+
+![Gazebo USV simulation](assets/gazebo.png)
+
+RViz monitoring view:
+
+![RViz monitoring view](assets/rviz.png)
+
+Monte Carlo trajectory playback:
+
+![Monte Carlo trajectory animation](assets/traj.gif)
 
 ## Requirements
 
