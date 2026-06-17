@@ -46,11 +46,11 @@ hf_success_dataset/
 hf_success_vl_dataset/
 
 # LKH solver runtime files
-src/fuel_planner/utils/lkh_tsp_solver/resource/single.par
-src/fuel_planner/utils/lkh_tsp_solver/resource/single.tsp
-src/fuel_planner/utils/lkh_tsp_solver/resource/single.txt
-src/fuel_planner/utils/lkh_tsp_solver/resource/*.csv
-src/fuel_planner/utils/lkh_tsp_solver/resource/rl_*.txt
+src/seadrive_planner/utils/lkh_tsp_solver/resource/single.par
+src/seadrive_planner/utils/lkh_tsp_solver/resource/single.tsp
+src/seadrive_planner/utils/lkh_tsp_solver/resource/single.txt
+src/seadrive_planner/utils/lkh_tsp_solver/resource/*.csv
+src/seadrive_planner/utils/lkh_tsp_solver/resource/rl_*.txt
 
 # Generated media and reports from experiments
 *_snapshots/
