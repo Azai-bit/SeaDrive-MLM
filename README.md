@@ -19,6 +19,35 @@ Monte Carlo trajectory playback:
 
 ![Monte Carlo trajectory animation](assets/traj.gif)
 
+VLM-based COLREG decision example:
+
+![VLM decision example](assets/VLM.png)
+
+## VLM Call Example
+
+The `Local` mode talks to an OpenAI-compatible local VLM/LLM endpoint. In the demo shown here, the model `qwen3-vl-2b-instruct-local` is served with the vLLM model loading and inference framework.
+
+Example request context:
+
+```text
+===== LLM INPUT call_id=3 =====
+wall_time: 2026-06-16 19:55:42
+model: qwen3-vl-2b-instruct-local
+prompt:
+You are the decision module controlling the own unmanned surface vessel.
+Scene input: 4 recent clean camera image frames as a short video, ordered oldest to newest, sampled about 2.5 seconds apart.
+Encounter summary: current target vessel count is 3. In reasoning, explicitly state this count and name the greatest-threat target_id from the Track input or Active target ids.
+COLREGS: follow standard maritime encounter rules using the camera video trend.
+Return only JSON: {"confidence":number,"reasoning":string,"course_action":"KEEP_COURSE|TURN_STARBOARD|TURN_PORT","speed_action":"SLOW_DOWN|SPEED_UP|EMERGENCY_STOP"}.
+===== END LLM INPUT call_id=3 =====
+```
+
+Example response:
+
+```json
+{"confidence":0.8,"reasoning":"3 targets visible; yellow vessel on right is closest and moving toward own vessel, increasing distance risk. Own vessel maintains course.","course_action":"KEEP_COURSE","speed_action":"SLOW_DOWN"}
+```
+
 ## Requirements
 
 - Ubuntu 20.04 with ROS Noetic.
