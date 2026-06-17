@@ -1,0 +1,556 @@
+<launch>
+  <!-- ============================= -->
+  <!-- Collision demo: one ego + one or more target boats -->
+  <!-- ============================= -->
+  <arg name="world" default="$(find myboat_gazebo)/worlds/myocean2.world" />
+  <arg name="gui" default="true" />
+  <arg name="rviz" default="false" />
+  <arg name="rviz_config" default="$(find exploration_manager)/config/monitor_myboat.rviz" />
+  <arg name="paused" default="false" />
+  <arg name="extra_gazebo_args" default="" />
+
+  <!-- default: no avoidance, two boats will collide -->
+  <arg name="enable_avoidance" default="false" />
+  <arg name="planner_mode" default="svo" />
+  <arg name="parallel_nav_enable" default="false" />
+  <arg name="parallel_nav_semantic_weight_enable" default="true" />
+  <arg name="parallel_nav_blend_alpha" default="0.68" />
+  <arg name="wait_for_trigger" default="true" />
+  <arg name="trigger_topic" default="/traj_start_trigger" />
+  <arg name="use_target_odom" default="false" />
+  <arg name="spawn_target_boat" default="true" />
+  <arg name="cleanup_existing_models" default="true" />
+  <arg name="spawn_myboat_delay_s" default="6.0" />
+  <arg name="spawn_target_delay_s" default="10.0" />
+  <arg name="use_static_buoys" default="false" />
+  <arg name="enable_extra_buoys" default="false" />
+  <arg name="channel_constraints_enable" default="false" />
+  <arg name="channel_left_y" default="244.0" />
+  <arg name="channel_right_y" default="274.0" />
+  <arg name="channel_x_min" default="-470.0" />
+  <arg name="channel_x_max" default="-410.0" />
+  <arg name="channel_x_step" default="6.0" />
+  <arg name="behavior_fsm_enable" default="true" />
+  <arg name="behavior_min_hold_s" default="8.0" />
+  <arg name="behavior_replan_interval_s" default="2.0" />
+  <arg name="behavior_pretrigger_enable" default="true" />
+
+  <!-- spawn pose: head-on -->
+  <arg name="ego_x" default="-470.0" />
+  <arg name="ego_y" default="260.0" />
+  <arg name="ego_yaw" default="0.0" />
+  <arg name="ego_goal_x" default="-430.0" />
+  <arg name="ego_goal_y" default="260.0" />
+  <arg name="goal_tolerance_m" default="4.0" />
+
+  <arg name="target_x" default="-440.0" />
+  <arg name="target_y" default="260.0" />
+  <arg name="target_z" default="0.65" />
+  <arg name="target_yaw" default="3.1415926" />
+  <arg name="enable_multi_targets" default="false" />
+  <arg name="target2_x" default="-450.0" />
+  <arg name="target2_y" default="245.0" />
+  <arg name="target2_z" default="0.65" />
+  <arg name="target2_yaw" default="2.3561945" />
+  <arg name="target3_x" default="-450.0" />
+  <arg name="target3_y" default="275.0" />
+  <arg name="target3_z" default="0.65" />
+  <arg name="target3_yaw" default="-2.3561945" />
+  <arg name="buoy1_x" default="-440.0" />
+  <arg name="buoy1_y" default="260.0" />
+  <arg name="buoy1_yaw" default="0.0" />
+  <arg name="buoy2_x" default="-434.0" />
+  <arg name="buoy2_y" default="254.0" />
+  <arg name="buoy2_yaw" default="0.0" />
+  <arg name="buoy3_x" default="-434.0" />
+  <arg name="buoy3_y" default="266.0" />
+  <arg name="buoy3_yaw" default="0.0" />
+  <arg name="buoy4_x" default="-428.0" />
+  <arg name="buoy4_y" default="254.0" />
+  <arg name="buoy4_yaw" default="0.0" />
+  <arg name="buoy5_x" default="-428.0" />
+  <arg name="buoy5_y" default="266.0" />
+  <arg name="buoy5_yaw" default="0.0" />
+  <arg name="buoy6_x" default="-422.0" />
+  <arg name="buoy6_y" default="260.0" />
+  <arg name="buoy6_yaw" default="0.0" />
+
+  <!-- cruise speed -->
+  <arg name="ego_speed" default="0.8" />
+  <arg name="target_speed" default="0.8" />
+  <arg name="target2_speed" default="0.8" />
+  <arg name="target3_speed" default="0.8" />
+  <arg name="target_turn_rate" default="0.0" />
+  <arg name="target2_turn_rate" default="0.0" />
+  <arg name="target3_turn_rate" default="0.0" />
+  <arg name="perception_targets_topic" default="/collision/perception/targets" />
+  <arg name="sensor_pointcloud_topic" default="/myboat/sensors/lidar_wamv/points" />
+  <arg name="enable_trajectory_record" default="true" />
+  <arg name="trajectory_record_interval_s" default="0.5" />
+  <arg name="trajectory_record_csv" default="tmp/boat_tracks.csv" />
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(arg world)" />
+    <arg name="paused" value="$(arg paused)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="use_sim_time" value="true" />
+    <arg name="verbose" value="false" />
+    <arg name="extra_gazebo_args" value="$(arg extra_gazebo_args)" />
+  </include>
+
+  <node if="$(arg cleanup_existing_models)"
+        pkg="myboat_gazebo"
+        type="gazebo_model_cleanup_node.py"
+        name="gazebo_model_cleanup_node"
+        output="screen">
+    <param name="models" value="myboat,target_boat,target_boat_2,target_boat_3" />
+    <param name="timeout_s" value="20.0" />
+  </node>
+
+  <!-- ============================= -->
+  <!-- Spawn myboat -->
+  <!-- ============================= -->
+  <arg name="urdf" default="$(find myboat_description)/urdf_myboat/myboat.xacro" />
+  <param name="myboat/robot_description"
+         command="$(find xacro)/xacro --inorder '$(arg urdf)' namespace:=myboat" />
+  <group ns="myboat">
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
+      <param name="publish_frequency" value="30.0" />
+    </node>
+  </group>
+  <node name="spawn_myboat"
+        pkg="gazebo_ros"
+        type="spawn_model"
+        launch-prefix="bash -c 'sleep $(arg spawn_myboat_delay_s); exec &quot;$0&quot; &quot;$@&quot;'"
+        args="-x $(arg ego_x) -y $(arg ego_y) -z 0.1 -R 0 -P 0 -Y $(arg ego_yaw)
+              -urdf -param myboat/robot_description -model myboat" />
+
+  <node if="$(arg rviz)"
+        pkg="rviz"
+        type="rviz"
+        name="boat_collision_rviz"
+        args="-d $(arg rviz_config)" />
+
+  <!-- ============================= -->
+  <!-- Spawn target boat -->
+  <!-- ============================= -->
+  <!-- target boat uses the same myboat resource, but disables sensors to avoid topic/service collisions -->
+    <param if="$(arg spawn_target_boat)" name="target_boat/robot_description"
+         command="$(find xacro)/xacro --inorder '$(arg urdf)'
+                  namespace:=myboat
+                  camera_enabled:=false
+                  lidar_enabled:=false
+                  imu_enabled:=false" />
+    <node if="$(arg spawn_target_boat)" name="spawn_target_boat"
+        pkg="gazebo_ros"
+        type="spawn_model"
+        launch-prefix="bash -c 'sleep $(arg spawn_target_delay_s); exec &quot;$0&quot; &quot;$@&quot;'"
+        args="-x $(arg target_x) -y $(arg target_y) -z $(arg target_z) -R 0 -P 0 -Y $(arg target_yaw)
+              -urdf -param target_boat/robot_description -model target_boat" />
+
+      <param if="$(eval arg('enable_multi_targets') and arg('spawn_target_boat'))" name="target_boat_2/robot_description"
+       command="$(find xacro)/xacro --inorder '$(find myboat_description)/urdf_experimental/target2_experimental_mesh.xacro'
+        namespace:=target_boat_2" />
+      <node if="$(eval arg('enable_multi_targets') and arg('spawn_target_boat'))" name="spawn_target_boat_2"
+      pkg="gazebo_ros"
+      type="spawn_model"
+      launch-prefix="bash -c 'sleep $(arg spawn_target_delay_s); exec &quot;$0&quot; &quot;$@&quot;'"
+      args="-x $(arg target2_x) -y $(arg target2_y) -z $(arg target2_z) -R 0 -P 0 -Y $(arg target2_yaw)
+        -urdf -param target_boat_2/robot_description -model target_boat_2" />
+
+      <param if="$(eval arg('enable_multi_targets') and arg('spawn_target_boat'))" name="target_boat_3/robot_description"
+       command="$(find xacro)/xacro --inorder '$(find myboat_description)/urdf_experimental/target3_experimental_mesh.xacro'
+        namespace:=target_boat_3" />
+      <node if="$(eval arg('enable_multi_targets') and arg('spawn_target_boat'))" name="spawn_target_boat_3"
+      pkg="gazebo_ros"
+      type="spawn_model"
+      launch-prefix="bash -c 'sleep $(arg spawn_target_delay_s); exec &quot;$0&quot; &quot;$@&quot;'"
+      args="-x $(arg target3_x) -y $(arg target3_y) -z $(arg target3_z) -R 0 -P 0 -Y $(arg target3_yaw)
+        -urdf -param target_boat_3/robot_description -model target_boat_3" />
+
+    <node if="$(arg use_static_buoys)" name="spawn_static_buoy_1"
+      pkg="gazebo_ros"
+      type="spawn_model"
+      args="-x $(arg buoy1_x) -y $(arg buoy1_y) -z 0.1 -R 0 -P 0 -Y $(arg buoy1_yaw)
+        -sdf -file $(find vrx_gazebo)/models/mb_marker_buoy_white/model.sdf -model static_buoy_1" />
+
+    <node if="$(arg use_static_buoys)" name="spawn_static_buoy_2"
+      pkg="gazebo_ros"
+      type="spawn_model"
+      args="-x $(arg buoy2_x) -y $(arg buoy2_y) -z 0.1 -R 0 -P 0 -Y $(arg buoy2_yaw)
+        -sdf -file $(find vrx_gazebo)/models/mb_marker_buoy_red/model.sdf -model static_buoy_2" />
+
+    <node if="$(arg use_static_buoys)" name="spawn_static_buoy_3"
+      pkg="gazebo_ros"
+      type="spawn_model"
+      args="-x $(arg buoy3_x) -y $(arg buoy3_y) -z 0.1 -R 0 -P 0 -Y $(arg buoy3_yaw)
+        -sdf -file $(find vrx_gazebo)/models/mb_marker_buoy_green/model.sdf -model static_buoy_3" />
+
+    <node if="$(eval arg('use_static_buoys') and arg('enable_extra_buoys'))" name="spawn_static_buoy_4"
+      pkg="gazebo_ros"
+      type="spawn_model"
+      args="-x $(arg buoy4_x) -y $(arg buoy4_y) -z 0.1 -R 0 -P 0 -Y $(arg buoy4_yaw)
+        -sdf -file $(find vrx_gazebo)/models/mb_marker_buoy_white/model.sdf -model static_buoy_4" />
+
+    <node if="$(eval arg('use_static_buoys') and arg('enable_extra_buoys'))" name="spawn_static_buoy_5"
+      pkg="gazebo_ros"
+      type="spawn_model"
+      args="-x $(arg buoy5_x) -y $(arg buoy5_y) -z 0.1 -R 0 -P 0 -Y $(arg buoy5_yaw)
+        -sdf -file $(find vrx_gazebo)/models/mb_marker_buoy_red/model.sdf -model static_buoy_5" />
+
+    <node if="$(eval arg('use_static_buoys') and arg('enable_extra_buoys'))" name="spawn_static_buoy_6"
+      pkg="gazebo_ros"
+      type="spawn_model"
+      args="-x $(arg buoy6_x) -y $(arg buoy6_y) -z 0.1 -R 0 -P 0 -Y $(arg buoy6_yaw)
+        -sdf -file $(find vrx_gazebo)/models/mb_marker_buoy_green/model.sdf -model static_buoy_6" />
+
+  <!-- ============================= -->
+  <!-- Odom for both boats -->
+  <!-- ============================= -->
+  <group ns="odom_myboat">
+    <include file="$(find wamv_gazebo)/launch/odom_publisher.launch">
+      <arg name="model_name" value="myboat" />
+      <arg name="odom_topic" value="/myboat/odom" />
+      <arg name="base_frame" value="myboat/base_link" />
+    </include>
+  </group>
+
+  <group if="$(arg spawn_target_boat)" ns="odom_target_boat">
+    <include file="$(find wamv_gazebo)/launch/odom_publisher.launch">
+      <arg name="model_name" value="target_boat" />
+      <arg name="odom_topic" value="/target_boat/odom" />
+      <arg name="base_frame" value="target_boat/base_link" />
+    </include>
+  </group>
+
+  <group if="$(eval arg('enable_multi_targets') and arg('spawn_target_boat'))" ns="odom_target_boat_2">
+    <include file="$(find wamv_gazebo)/launch/odom_publisher.launch">
+      <arg name="model_name" value="target_boat_2" />
+      <arg name="odom_topic" value="/target_boat_2/odom" />
+      <arg name="base_frame" value="target_boat_2/base_link" />
+    </include>
+  </group>
+
+  <group if="$(eval arg('enable_multi_targets') and arg('spawn_target_boat'))" ns="odom_target_boat_3">
+    <include file="$(find wamv_gazebo)/launch/odom_publisher.launch">
+      <arg name="model_name" value="target_boat_3" />
+      <arg name="odom_topic" value="/target_boat_3/odom" />
+      <arg name="base_frame" value="target_boat_3/base_link" />
+    </include>
+  </group>
+
+  <!-- ============================= -->
+  <!-- Twist->thrust for each boat -->
+  <!-- ============================= -->
+  <node pkg="myboat_gazebo" type="twist2thrust.py" name="twist2thrust_myboat" output="screen">
+    <remap from="/cmd_vel" to="/myboat/cmd_vel" />
+    <remap from="left_cmd" to="/myboat/thrusters/left_thrust_cmd" />
+    <remap from="right_cmd" to="/myboat/thrusters/right_thrust_cmd" />
+    <param name="linear_scaling" value="1.0" />
+    <param name="angular_scaling" value="1.0" />
+  </node>
+
+  <!-- ============================= -->
+  <!-- Normal cruise control -->
+  <!-- ============================= -->
+  <node pkg="myboat_gazebo" type="collision_ego_cruise_node.py" name="collision_ego_cruise_node" output="screen">
+    <param name="cmd_topic" value="/collision/normal_cmd_vel" />
+    <param name="speed" value="$(arg ego_speed)" />
+    <param name="goal_x" value="$(arg ego_goal_x)" />
+    <param name="goal_y" value="$(arg ego_goal_y)" />
+    <param name="goal_tolerance_m" value="$(arg goal_tolerance_m)" />
+    <param name="stop_at_goal" value="true" />
+    <param name="publish_rate" value="20.0" />
+    <param name="wait_for_trigger" value="$(arg wait_for_trigger)" />
+    <param name="trigger_topic" value="$(arg trigger_topic)" />
+    <param name="debug_enable" value="true" />
+    <param name="debug_topic" value="/collision/ego_cruise_debug" />
+  </node>
+
+  <node if="$(arg spawn_target_boat)" pkg="myboat_gazebo" type="collision_target_cruise_node.py" name="collision_target_cruise_node" output="screen">
+    <param name="model_name" value="target_boat" />
+    <param name="speed" value="$(arg target_speed)" />
+    <param name="init_x" value="$(arg target_x)" />
+    <param name="init_y" value="$(arg target_y)" />
+    <param name="model_z" value="$(arg target_z)" />
+    <param name="init_yaw" value="$(arg target_yaw)" />
+    <param name="turn_rate" value="$(arg target_turn_rate)" />
+    <param name="publish_rate" value="20.0" />
+    <param name="wait_for_trigger" value="$(arg wait_for_trigger)" />
+    <param name="trigger_topic" value="$(arg trigger_topic)" />
+  </node>
+
+  <node if="$(eval arg('enable_multi_targets') and arg('spawn_target_boat'))" pkg="myboat_gazebo" type="collision_target_cruise_node.py" name="collision_target_cruise_node_2" output="screen">
+    <param name="model_name" value="target_boat_2" />
+    <param name="speed" value="$(arg target2_speed)" />
+    <param name="init_x" value="$(arg target2_x)" />
+    <param name="init_y" value="$(arg target2_y)" />
+    <param name="model_z" value="$(arg target2_z)" />
+    <param name="init_yaw" value="$(arg target2_yaw)" />
+    <param name="turn_rate" value="$(arg target2_turn_rate)" />
+    <param name="publish_rate" value="20.0" />
+    <param name="wait_for_trigger" value="$(arg wait_for_trigger)" />
+    <param name="trigger_topic" value="$(arg trigger_topic)" />
+  </node>
+
+  <node if="$(eval arg('enable_multi_targets') and arg('spawn_target_boat'))" pkg="myboat_gazebo" type="collision_target_cruise_node.py" name="collision_target_cruise_node_3" output="screen">
+    <param name="model_name" value="target_boat_3" />
+    <param name="speed" value="$(arg target3_speed)" />
+    <param name="init_x" value="$(arg target3_x)" />
+    <param name="init_y" value="$(arg target3_y)" />
+    <param name="model_z" value="$(arg target3_z)" />
+    <param name="init_yaw" value="$(arg target3_yaw)" />
+    <param name="turn_rate" value="$(arg target3_turn_rate)" />
+    <param name="publish_rate" value="20.0" />
+    <param name="wait_for_trigger" value="$(arg wait_for_trigger)" />
+    <param name="trigger_topic" value="$(arg trigger_topic)" />
+  </node>
+
+  <!-- ============================= -->
+  <!-- Pipeline: Perception -> State -> Risk -> LLM -->
+  <!-- ============================= -->
+  <node pkg="myboat_gazebo" type="collision_perception_node.py" name="collision_perception_node" output="screen">
+    <param name="cloud_topic" value="$(arg sensor_pointcloud_topic)" />
+    <param name="ego_odom_topic" value="/myboat/odom" />
+    <param name="target_odom_topic" value="/target_boat/odom" />
+    <param name="targets_topic" value="$(arg perception_targets_topic)" />
+    <param name="decision_topic" value="/collision/llm_decision" />
+    <param name="pointcloud_sample_step" value="2" />
+    <param name="cluster_eps_m" value="1.8" />
+    <param name="cluster_min_points" value="4" />
+    <param name="track_gate_m" value="8.0" />
+    <param name="track_gate_range_scale" value="0.06" />
+    <param name="track_max_count" value="8" />
+    <param name="track_init_min_hits" value="1" />
+    <param name="semantic_buoy_world_speed_max" value="0.18" />
+    <param name="semantic_buoy_max_xy_m" value="1.8" />
+    <param name="semantic_buoy_max_size_m2" value="2.5" />
+    <param name="semantic_buoy_min_hits" value="2" />
+  </node>
+
+  <node pkg="myboat_gazebo" type="collision_state_estimator_node.py" name="collision_state_estimator_node" output="screen">
+    <param name="ego_odom_topic" value="/myboat/odom" />
+    <param name="target_odom_topic" value="/target_boat/odom" />
+    <param name="use_target_odom" value="$(arg use_target_odom)" />
+    <param name="target_name" value="target_boat" />
+    <param name="pointcloud_topic" value="$(arg sensor_pointcloud_topic)" />
+    <param name="state_topic" value="/collision/state_estimation" />
+    <param name="distance_topic" value="/collision/debug/distance/myboat_target_boat" />
+    <param name="distance_info_topic" value="/collision/debug/distance_info/myboat_target_boat" />
+  </node>
+
+  <node if="$(arg spawn_target_boat)" pkg="myboat_gazebo" type="pairwise_distance_debug_node.py" name="pairwise_distance_target1" output="screen">
+    <param name="ego_odom_topic" value="/myboat/odom" />
+    <param name="target_odom_topic" value="/target_boat/odom" />
+    <param name="output_topic" value="/collision/debug/absolute_distance/target_boat" />
+    <param name="info_topic" value="/collision/debug/absolute_distance_info/target_boat" />
+    <param name="target_name" value="target_boat" />
+    <param name="publish_rate" value="20.0" />
+    <param name="debug_enable" value="false" />
+  </node>
+
+  <node if="$(arg enable_trajectory_record)" pkg="myboat_gazebo" type="trajectory_recorder_node.py" name="trajectory_recorder_node" output="screen">
+    <param name="interval_s" value="$(arg trajectory_record_interval_s)" />
+    <param name="output_csv" value="$(arg trajectory_record_csv)" />
+    <param name="channel_constraints_enable" value="$(arg channel_constraints_enable)" />
+    <param name="channel_left_y" value="$(arg channel_left_y)" />
+    <param name="channel_right_y" value="$(arg channel_right_y)" />
+    <param name="channel_x_min" value="$(arg channel_x_min)" />
+    <param name="channel_x_max" value="$(arg channel_x_max)" />
+    <param name="channel_x_step" value="$(arg channel_x_step)" />
+    <param name="goal_x" value="$(arg ego_goal_x)" />
+    <param name="goal_y" value="$(arg ego_goal_y)" />
+    <param name="ego_odom_topic" value="/myboat/odom" />
+    <param name="target_odom_topic" value="/target_boat/odom" />
+    <param name="target2_odom_topic" value="/target_boat_2/odom" />
+    <param name="target3_odom_topic" value="/target_boat_3/odom" />
+    <param if="$(arg behavior_fsm_enable)" name="llm_decision_topic" value="/collision/behavior_decision" />
+    <param unless="$(arg behavior_fsm_enable)" name="llm_decision_topic" value="/collision/llm_decision" />
+  </node>
+
+  <node if="$(eval arg('enable_multi_targets') and arg('spawn_target_boat'))" pkg="myboat_gazebo" type="pairwise_distance_debug_node.py" name="pairwise_distance_target2" output="screen">
+    <param name="ego_odom_topic" value="/myboat/odom" />
+    <param name="target_odom_topic" value="/target_boat_2/odom" />
+    <param name="output_topic" value="/collision/debug/absolute_distance/target_boat_2" />
+    <param name="info_topic" value="/collision/debug/absolute_distance_info/target_boat_2" />
+    <param name="target_name" value="target_boat_2" />
+    <param name="publish_rate" value="20.0" />
+    <param name="debug_enable" value="false" />
+  </node>
+
+  <node if="$(eval arg('enable_multi_targets') and arg('spawn_target_boat'))" pkg="myboat_gazebo" type="pairwise_distance_debug_node.py" name="pairwise_distance_target3" output="screen">
+    <param name="ego_odom_topic" value="/myboat/odom" />
+    <param name="target_odom_topic" value="/target_boat_3/odom" />
+    <param name="output_topic" value="/collision/debug/absolute_distance/target_boat_3" />
+    <param name="info_topic" value="/collision/debug/absolute_distance_info/target_boat_3" />
+    <param name="target_name" value="target_boat_3" />
+    <param name="publish_rate" value="20.0" />
+    <param name="debug_enable" value="false" />
+  </node>
+
+  <node pkg="myboat_gazebo" type="collision_risk_assessor_node.py" name="collision_risk_assessor_node" output="screen">
+    <param name="state_topic" value="/collision/state_estimation" />
+    <param name="risk_topic" value="/collision/risk" />
+    <param name="trigger_topic" value="/collision/trigger" />
+    <param name="dcpa_threshold_m" value="4.2" />
+    <param name="tcpa_threshold_s" value="28.0" />
+    <param name="trigger_off_dcpa_threshold_m" value="5.8" />
+    <param name="trigger_off_tcpa_threshold_s" value="-2.0" />
+    <param name="trigger_min_hold_s" value="10.0" />
+    <param name="trigger_latch_once_true" value="false" />
+    <param name="debug_enable" value="true" />
+  </node>
+
+  <!-- VLM output -> behavior FSM: latch semantic decisions into sustained local-planner goals -->
+  <node if="$(arg behavior_fsm_enable)" pkg="myboat_gazebo" type="collision_behavior_fsm_node.py" name="collision_behavior_fsm_node" output="screen">
+    <param name="vlm_decision_topic" value="/collision/llm_decision" />
+    <param name="behavior_decision_topic" value="/collision/behavior_decision" />
+    <param name="trigger_topic" value="/collision/trigger" />
+    <param name="publish_rate" value="20.0" />
+    <param name="min_behavior_hold_s" value="$(arg behavior_min_hold_s)" />
+    <param name="replan_interval_s" value="$(arg behavior_replan_interval_s)" />
+    <param name="decision_stale_s" value="18.0" />
+    <param name="confidence_min" value="0.25" />
+    <param name="pretrigger_behavior_enable" value="$(arg behavior_pretrigger_enable)" />
+    <param name="default_duration_s" value="10.0" />
+    <param name="debug_enable" value="true" />
+  </node>
+
+  <!-- Trajectory planner: straight baseline -> curved B-spline path after LLM constraints -->
+  <node pkg="myboat_gazebo" type="collision_trajectory_planner_node.py" name="collision_trajectory_planner_node" output="screen">
+    <param name="ego_odom_topic" value="/myboat/odom" />
+    <param name="trigger_topic" value="/collision/trigger" />
+    <param name="wait_for_start_trigger" value="$(arg wait_for_trigger)" />
+    <param name="start_trigger_topic" value="$(arg trigger_topic)" />
+    <param if="$(arg behavior_fsm_enable)" name="decision_topic" value="/collision/behavior_decision" />
+    <param unless="$(arg behavior_fsm_enable)" name="decision_topic" value="/collision/llm_decision" />
+    <param name="perception_targets_topic" value="$(arg perception_targets_topic)" />
+    <param name="planner_mode" value="$(arg planner_mode)" />
+    <param name="cmd_topic" value="/collision/trajectory_cmd_vel" />
+    <param name="path_topic" value="/collision/planned_path" />
+    <param name="current_waypoint_topic" value="/collision/current_waypoint" />
+    <param name="path_frame" value="world" />
+    <param name="publish_rate" value="20.0" />
+    <param name="straight_horizon_m" value="25.0" />
+    <param name="curve_horizon_m" value="22.0" />
+    <param name="path_sample_count" value="70" />
+    <param name="curve_lateral_m" value="4.5" />
+    <param name="lookahead_m" value="2.5" />
+    <param name="kp_heading" value="1.2" />
+    <param name="max_turn_rate" value="0.40" />
+    <param name="default_speed" value="0.70" />
+    <param name="max_speed" value="2.0" />
+    <param name="nav_goal_x" value="$(arg ego_goal_x)" />
+    <param name="nav_goal_y" value="$(arg ego_goal_y)" />
+    <param name="nav_use_goal_in_avoid" value="true" />
+    <param name="vo_time_horizon_s" value="12.0" />
+    <param name="vo_sample_dt_s" value="0.5" />
+    <param name="vo_ego_radius_m" value="1.2" />
+    <param name="vo_target_radius_m" value="1.8" />
+    <param name="vo_safety_margin_m" value="1.0" />
+    <param name="vo_progress_weight" value="1.2" />
+    <param name="vo_heading_weight" value="0.7" />
+    <param name="vo_clearance_weight" value="3.4" />
+    <param name="vo_collision_penalty" value="1800.0" />
+    <param name="mpc_horizon_s" value="6.5" />
+    <param name="mpc_sample_dt_s" value="0.45" />
+    <param name="mpc_goal_weight" value="4.6" />
+    <param name="mpc_progress_weight" value="0.8" />
+    <param name="mpc_heading_weight" value="0.45" />
+    <param name="mpc_clearance_weight" value="0.0" />
+    <param name="mpc_collision_penalty" value="0.0" />
+    <param name="mpc_smooth_weight" value="3.8" />
+    <param name="mpc_feasibility_weight" value="3.2" />
+    <param name="mpc_terminal_speed_weight" value="1.4" />
+    <param name="mpc_predictive_risk_weight" value="0.0" />
+    <param name="mpc_max_speed" value="1.0" />
+    <param name="mpc_turn_weight" value="1.8" />
+    <param name="mpc_turn_change_weight" value="4.6" />
+    <param name="mpc_yaw_smooth_weight" value="0.30" />
+    <param name="mpc_tracking_blend" value="0.82" />
+    <param name="mpc_lookahead_m" value="4.8" />
+    <param name="mpc_heading_gain" value="0.45" />
+    <param name="mpc_control_blocks" value="4" />
+    <param name="mpc_solver_maxiter" value="60" />
+    <param name="mpc_solver_ftol" value="1e-3" />
+    <param name="mpc_nlopt_algorithm" value="11" />
+    <param name="mpc_nlopt_maxtime_s" value="0.04" />
+    <param name="mpc_nlopt_fd_eps" value="1e-3" />
+    <param name="mpc_geometry_avoidance_enable" value="false" />
+    <param name="mpc_colreg_turn_bias_weight" value="10.0" />
+    <param name="mpc_colreg_speed_weight" value="2.0" />
+    <param name="mpc_colreg_min_turn_rate" value="0.14" />
+    <param name="mpc_colreg_only_when_trigger" value="true" />
+    <param name="mpc_goal_rejoin_enable" value="true" />
+    <param name="mpc_goal_rejoin_corridor_width_m" value="6.0" />
+    <param name="mpc_goal_rejoin_lookahead_m" value="28.0" />
+    <param name="mpc_goal_rejoin_emergency_distance_m" value="4.2" />
+    <param name="mpc_goal_rejoin_speed_scale" value="0.90" />
+    <param name="mpc_near_miss_event_topic" value="/collision/mpc_near_miss_event" />
+    <param name="mpc_near_miss_clearance_m" value="1.0" />
+    <param name="mpc_near_miss_turn_threshold" value="0.08" />
+    <param name="mpc_near_miss_min_interval_s" value="2.0" />
+    <param name="parallel_nav_enable" value="$(arg parallel_nav_enable)" />
+    <param name="parallel_nav_semantic_weight_enable" value="$(arg parallel_nav_semantic_weight_enable)" />
+    <param name="parallel_nav_horizon_s" value="9.0" />
+    <param name="parallel_nav_sample_dt_s" value="0.4" />
+    <param name="parallel_nav_goal_weight" value="1.6" />
+    <param name="parallel_nav_heading_weight" value="0.9" />
+    <param name="parallel_nav_clearance_weight" value="3.2" />
+    <param name="parallel_nav_collision_penalty" value="1400.0" />
+    <param name="parallel_nav_smooth_weight" value="1.4" />
+    <param name="parallel_nav_vlm_bias_weight" value="1.1" />
+    <param name="parallel_nav_blend_alpha" value="$(arg parallel_nav_blend_alpha)" />
+    <param name="channel_constraints_enable" value="$(arg channel_constraints_enable)" />
+    <param name="channel_left_y" value="$(arg channel_left_y)" />
+    <param name="channel_right_y" value="$(arg channel_right_y)" />
+    <param name="channel_x_min" value="$(arg channel_x_min)" />
+    <param name="channel_x_max" value="$(arg channel_x_max)" />
+    <param name="channel_x_step" value="$(arg channel_x_step)" />
+    <param name="nav_linear_response_tau_s" value="1.8" />
+    <param name="nav_angular_response_tau_s" value="2.6" />
+    <param name="nav_response_deadtime_s" value="0.5" />
+    <param name="nav_latency_margin_s" value="0.8" />
+    <param name="nav_latency_buffer_max_m" value="1.6" />
+    <param name="nav_predictive_gate_scale" value="5.0" />
+    <param name="nav_predictive_time_bias_s" value="4.0" />
+    <param name="nav_predictive_risk_weight" value="0.0" />
+    <param name="vo_predictive_risk_weight" value="0.0" />
+    <param name="identification_mode_enable" value="true" />
+    <param name="identification_assoc_confidence_min" value="0.55" />
+    <param name="identification_camera_hfov_deg" value="90.0" />
+    <param name="identification_fov_margin_deg" value="8.0" />
+    <param name="identification_speed" value="0.28" />
+    <param name="identification_max_speed" value="0.44" />
+    <param name="identification_turn_rate_limit" value="0.20" />
+    <param name="identification_fov_weight" value="18.0" />
+    <param name="identification_center_weight" value="0.35" />
+    <param name="identification_progress_weight" value="0.20" />
+    <param name="identification_risk_weight" value="2.0" />
+    <param name="plain_mpc_profile_enable" value="true" />
+    <param name="plain_mpc_target_radius_scale" value="0.45" />
+    <param name="plain_mpc_safety_margin_scale" value="0.35" />
+    <param name="plain_mpc_clearance_weight_scale" value="0.0" />
+    <param name="plain_mpc_collision_penalty_scale" value="0.0" />
+    <param name="plain_mpc_predictive_weight_scale" value="0.0" />
+    <param name="plain_mpc_speed_scale" value="1.45" />
+    <param name="plain_mpc_max_speed_scale" value="1.70" />
+    <param name="debug_enable" value="true" />
+  </node>
+
+  <!-- Trigger=false -> normal cmd; Trigger=true -> COLREGs cmd -->
+  <node pkg="myboat_gazebo" type="collision_cmd_mux_node.py" name="collision_cmd_mux_node" output="screen">
+    <param name="enable_avoidance" value="$(arg enable_avoidance)" />
+    <param name="planner_mode" value="$(arg planner_mode)" />
+    <param name="trigger_topic" value="/collision/trigger" />
+    <param name="wait_for_start_trigger" value="$(arg wait_for_trigger)" />
+    <param name="start_trigger_topic" value="$(arg trigger_topic)" />
+    <param name="recovery_active_topic" value="/collision/recovery_active" />
+    <param name="normal_cmd_topic" value="/collision/normal_cmd_vel" />
+    <param name="avoid_cmd_topic" value="/collision/trajectory_cmd_vel" />
+    <param name="output_cmd_topic" value="/myboat/cmd_vel" />
+    <param name="publish_rate" value="30.0" />
+    <param name="debug_enable" value="true" />
+    <param name="debug_topic" value="/collision/cmd_mux_debug" />
+  </node>
+</launch>

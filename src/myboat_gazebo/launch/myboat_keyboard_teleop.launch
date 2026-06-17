@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!--
+    使用键盘 WASD 控制 myboat 的线速度/角速度。
+    依赖系统包：ros-noetic-teleop-twist-keyboard
+    运行前请确保已经：
+      sudo apt-get install ros-noetic-teleop-twist-keyboard
+  -->
+
+  <!-- 线速度、角速度缩放系数，可按需要调大/调小 -->
+  <arg name="scale_linear"  default="0.8"/>
+  <arg name="scale_angular" default="0.8"/>
+
+  <!-- 要发布的 Twist 话题，默认为 /cmd_vel（已经接在 twist2thrust 上） -->
+  <arg name="cmd_vel_topic" default="/cmd_vel"/>
+
+  <!-- 键盘控制节点：在当前终端中用 WASD 控制船前进/后退/转向。
+       说明：
+         - W/S: 前进 / 后退
+         - A/D: 左转 / 右转
+         - X: 急停
+         - 其它快捷键见终端提示 -->
+  <node pkg="teleop_twist_keyboard"
+        type="teleop_twist_keyboard.py"
+        name="myboat_keyboard_teleop"
+        output="screen">
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+    <param name="scale_linear"  value="$(arg scale_linear)"/>
+    <param name="scale_angular" value="$(arg scale_angular)"/>
+  </node>
+
+</launch>
+

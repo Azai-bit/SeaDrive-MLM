@@ -1,0 +1,64 @@
+<launch>
+  <!-- RViz monitor for collision scene -->
+  <arg name="rviz_config" default="$(find exploration_manager)/config/monitor_myboat.rviz" />
+  <arg name="myboat_odom_topic" default="/myboat/odom" />
+  <arg name="target_odom_topic" default="/target_boat/odom" />
+  <arg name="cloud_topic" default="/myboat/sensors/lidar_wamv/points" />
+  <arg name="trigger_topic" default="/traj_start_trigger" />
+
+  <!-- world -> myboat/base_link -->
+  <node pkg="myboat_gazebo"
+        type="myboat_odom_tf.py"
+        name="myboat_odom_tf_monitor"
+        output="log">
+    <param name="odom_topic" value="$(arg myboat_odom_topic)" />
+    <param name="world_frame" value="world" />
+    <param name="base_frame" value="myboat/base_link" />
+  </node>
+
+  <!-- world -> target_boat/base_link (optional for additional displays) -->
+  <node pkg="myboat_gazebo"
+        type="myboat_odom_tf.py"
+        name="target_boat_odom_tf_monitor"
+        output="log">
+    <param name="odom_topic" value="$(arg target_odom_topic)" />
+    <param name="world_frame" value="world" />
+    <param name="base_frame" value="target_boat/base_link" />
+  </node>
+
+  <!-- lidar tf aliases/mount -->
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="tf_lidar_myboat_alias_monitor"
+        args="0 0 0 0 0 0 myboat/sensors/lidar_wamv_link myboat/lidar_wamv_link 100" />
+
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="tf_lidar_myboat_mount_monitor"
+        args="-0.4 0 0.8 0 0 0 myboat/base_link myboat/sensors/lidar_wamv_link 100" />
+
+  <!-- RViz button trigger bridge:
+       - Publish Point tool -> /clicked_point
+       - 2D Nav Goal tool    -> /move_base_simple/goal
+       both can trigger /traj_start_trigger -->
+  <node pkg="myboat_gazebo"
+        type="rviz_trigger_bridge.py"
+        name="rviz_trigger_bridge"
+        output="log">
+    <param name="trigger_topic" value="$(arg trigger_topic)" />
+    <param name="point_topic" value="/clicked_point" />
+    <param name="goal_topic" value="/move_base_simple/goal" />
+  </node>
+
+  <!-- RViz -->
+  <node pkg="rviz"
+        type="rviz"
+        name="rviz_myboat_monitor"
+        output="log"
+        args="-d $(arg rviz_config)">
+    <!-- keep these remaps for convenience -->
+    <remap from="/monitor/myboat/odom" to="$(arg myboat_odom_topic)" />
+    <remap from="/monitor/target_boat/odom" to="$(arg target_odom_topic)" />
+    <remap from="/monitor/myboat/lidar_points" to="$(arg cloud_topic)" />
+  </node>
+</launch>

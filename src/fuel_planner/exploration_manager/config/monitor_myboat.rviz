@@ -1,0 +1,177 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /Grid1
+        - /FrontCameraImage1
+        - /MyboatLidar1
+        - /PerceptionClusters1
+        - /PlannedPath1
+        - /CurrentWaypoint1
+        - /TargetOdom1
+      Splitter Ratio: 0.5
+    Tree Height: 600
+  - Class: rviz/Views
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: rviz/Time
+    Name: Time
+    SyncMode: 0
+    SyncSource: MyboatLidar
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 1
+      Plane: XY
+      Plane Cell Count: 40
+      Reference Frame: myboat/base_link
+      Color: 160; 160; 164
+      Alpha: 0.6
+      Line Style:
+        Value: Lines
+        Line Width: 0.03
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Value: true
+    - Class: rviz/PointCloud2
+      Name: MyboatLidar
+      Enabled: true
+      Topic: /myboat/sensors/lidar_wamv/points
+      Queue Size: 10
+      Style: Points
+      Size (Pixels): 3
+      Size (m): 0.03
+      Color Transformer: AxisColor
+      Axis: Z
+      Position Transformer: XYZ
+      Decay Time: 0
+      Use Fixed Frame: true
+      Selectable: true
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Value: true
+      Value: true
+    - Class: rviz/Image
+      Name: FrontCameraImage
+      Enabled: true
+      Image Topic: /myboat/sensors/cameras/front_camera/image_raw
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Class: rviz/MarkerArray
+      Name: PerceptionClusters
+      Enabled: true
+      Marker Topic: /collision/perception/cluster_markers
+      Namespaces:
+        {}
+      Queue Size: 20
+      Value: true
+    - Class: rviz/Odometry
+      Name: TargetOdom
+      Enabled: true
+      Topic: /target_boat/odom
+      Keep: 200
+      Shape:
+        Alpha: 0.8
+        Axes Length: 1
+        Axes Radius: 0.1
+        Color: 255; 25; 0
+        Head Length: 0.3
+        Head Radius: 0.1
+        Shaft Length: 1
+        Shaft Radius: 0.05
+        Value: Arrow
+      Position Tolerance: 0.1
+      Angle Tolerance: 0.1
+      Value: true
+    - Class: rviz/Odometry
+      Name: MyboatOdom
+      Enabled: true
+      Topic: /myboat/odom
+      Keep: 50
+      Shape:
+        Alpha: 0.7
+        Axes Length: 0.8
+        Axes Radius: 0.08
+        Color: 0; 170; 255
+        Head Length: 0.25
+        Head Radius: 0.08
+        Shaft Length: 0.8
+        Shaft Radius: 0.04
+        Value: Arrow
+      Position Tolerance: 0.05
+      Angle Tolerance: 0.05
+      Value: true
+    - Class: rviz/Path
+      Name: PlannedPath
+      Enabled: true
+      Topic: /collision/planned_path
+      Queue Size: 10
+      Color: 60; 220; 60
+      Alpha: 1
+      Line Style: Lines
+      Line Width: 0.08
+      Pose Style: None
+      Value: true
+    - Class: rviz/Pose
+      Name: CurrentWaypoint
+      Enabled: true
+      Topic: /collision/current_waypoint
+      Shape: Arrow
+      Color: 255; 215; 0
+      Alpha: 1
+      Shaft Length: 1.2
+      Shaft Radius: 0.08
+      Head Length: 0.35
+      Head Radius: 0.16
+      Axes Length: 1
+      Axes Radius: 0.08
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Default Light: true
+    Fixed Frame: world
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+    - Class: rviz/PublishPoint
+      Single click: true
+      Topic: /clicked_point
+    - Class: rviz/SetInitialPose
+      Topic: /initialpose
+    - Class: rviz/SetGoal
+      Topic: /move_base_simple/goal
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Name: Current View
+      Target Frame: myboat/base_link
+      Distance: 35
+      Pitch: 0.7
+      Yaw: 1.57
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+Window Geometry:
+  Height: 900
+  Width: 1600
+  X: 60
+  Y: 40

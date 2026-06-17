@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+  
+  <node pkg="myboat_gazebo" type="test_cpp_myboat_control" name="test_cpp_myboat_control" output="screen" />
+
+  
+</launch>

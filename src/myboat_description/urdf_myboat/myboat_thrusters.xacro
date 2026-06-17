@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:macro name="myboat_engine" params="prefix position orientation:='0 0 0'">
+    <!-- Engine link -->
+    <link name="${prefix}_engine_link">
+      <inertial>
+        <mass value="0.1"/>
+        <inertia ixx="0.00889245" ixy="0.0" ixz="0.0" iyy="0.00911125" iyz="0.0" izz="0.00078125"/>
+      </inertial>
+    </link>
+
+    <!-- Propeller link -->
+    <link name="${prefix}_propeller_link">
+      <visual>
+        <geometry>
+          <mesh filename="package://myboat_description/meshes/myboat_propeller.STL"/>
+        </geometry>
+        <material name="${prefix}_propeller_material">
+          <diffuse>1.0 1.0 1.0</diffuse>
+          <specular>1.0 1.0 1.0</specular>
+          <pbr>
+            <metal>
+              <albedo_map>package://myboat_description/models/materials/textures/Boat_Albedo.png</albedo_map>
+              <metalness_map>package://myboat_description/models/materials/textures/Boat_Metalness.png</metalness_map>
+              <roughness_map>package://myboat_description/models/materials/textures/Boat_Roughness.png</roughness_map>
+            </metal>
+          </pbr>
+          <script>
+            <uri>package://myboat_description/models/materials/scripts/</uri>
+            <uri>package://myboat_description/models/materials/textures/</uri>
+            <name>UrbanTile/Boat_Diffuse</name>
+          </script>
+        </material>
+      </visual>
+      <inertial>
+        <mass value="0.5"/>
+        <inertia ixx="0.008545" ixy="0.0" ixz="0.0" iyy="0.008545" iyz="0.0" izz="0.0144"/>
+      </inertial>
+    </link>
+
+    <joint name="${prefix}_chasis_engine_joint" type="revolute">
+      <axis xyz="0 0 1"/>
+      <origin rpy="${orientation}" xyz="${position}"/>
+      <parent link="myboat/dummy_link"/>
+      <child link="${prefix}_engine_link"/>
+      <limit lower="${-pi}" upper="${pi}" effort="10" velocity="10"/>
+    </joint>
+
+    <joint name="${prefix}_engine_propeller_joint" type="continuous">
+      <axis xyz="1 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent link="${prefix}_engine_link"/>
+      <child link="${prefix}_propeller_link"/>
+      <limit effort="100" velocity="100"/>
+      <dynamics friction="0.05" damping="0.05"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:myboat_engine prefix="right" position="-0.85 -0.193 -0.34" orientation="0 0 0"/>
+  <xacro:myboat_engine prefix="left"  position="-0.85  0.193 -0.34" orientation="0 0 0"/>
+
+  <gazebo>
+    <plugin name="myboat_gazebo_thrust" filename="libmyboat_thrust_plugin.so">
+      <cmdTimeout>1.0</cmdTimeout>
+      <publisherRate>100.0</publisherRate>
+      <robotNamespace>${namespace}</robotNamespace>
+
+      <xacro:include filename="$(find myboat_description)/urdf_myboat/myboat_thruster_config.xacro" />
+
+      <xacro:myboat_thruster_config name="left" />
+      <xacro:myboat_thruster_config name="right" />
+    </plugin>
+  </gazebo>
+
+</robot>

@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="myboat">
+  <xacro:include filename="$(find wamv_gazebo)/urdf/macros.xacro" />
+  <!-- 推进力 -->
+  <xacro:arg name="maxForceFwd"   default="164.0"/>
+  <xacro:arg name="maxForceRev"   default="-100.0"/>
+
+  <!-- 水体参数 -->
+  <xacro:arg name="waterLevel"    default="0"/>
+  <xacro:arg name="waterDensity"  default="1000"/>
+
+  <!-- 系数 -->
+  <xacro:arg name="xDotU" default="2.0"/>  
+  <xacro:arg name="yDotV" default="12.0"/>
+  <xacro:arg name="zDotW" default="0.1"/>
+  <xacro:arg name="kDotP" default="0.1"/>
+  <xacro:arg name="mDotQ" default="0.1"/>
+  <xacro:arg name="nDotR" default="2.0"/>
+
+  <!-- 阻尼系数：Surge (x) -->
+  <xacro:arg name="xU"  default="6.8"/>
+  <xacro:arg name="xUU" default="8.0"/>
+
+  <!-- 阻尼系数：Sway (y) -->
+  <xacro:arg name="yV"  default="6.0"/>
+  <xacro:arg name="yVV" default="0.8"/>
+
+  <!-- 阻尼系数：Heave (z) -->
+  <xacro:arg name="zW"  default="20.0"/>
+  <xacro:arg name="zWW" default="0.0"/>
+
+  <!-- 阻尼系数：Roll (k) -->
+  <xacro:arg name="kP"  default="20.0"/>
+  <xacro:arg name="kPP" default="0.0"/>
+
+  <!-- 阻尼系数：Pitch (m) -->
+  <xacro:arg name="mQ"  default="20.0"/>
+  <xacro:arg name="mQQ" default="0.0"/>
+
+  <!-- 阻尼系数：Yaw (n) -->
+  <xacro:arg name="nR"  default="5.4"/>
+  <xacro:arg name="nRR" default="1.0"/>
+
+  <!-- 几何参数（匹配真实船体） -->
+  <xacro:arg name="hullRadius"  default="0.2"/>
+  <xacro:arg name="boatWidth"   default="0.5"/>
+  <xacro:arg name="boatLength"  default="1.8"/>
+
+  <!-- ! 相关参数配置 -->
+  <xacro:arg name="namespace" default="myboat"/>
+  <xacro:property name="namespace" value="$(arg namespace)" scope="global" />
+  <xacro:arg name="thruster_namespace" default="thrusters/"/>
+  <xacro:property name="thruster_namespace" value="$(arg thruster_namespace)" scope="global" />
+
+  <!-- ! 配置 MyBoat 船本体结构模型 -->
+  <xacro:include filename="$(find myboat_description)/urdf_myboat/myboat.urdf.xacro" />
+
+  <!-- ! 配置 左右螺旋桨 -->
+  <xacro:include filename="$(find myboat_description)/urdf_myboat/myboat_thrusters.xacro" />
+
+  <!-- ! 动力学仿真 -->
+  <xacro:include filename="$(find myboat_description)/urdf_myboat/myboat_dynamics_plugin.xacro" />
+  <xacro:usv_dynamics_gazebo name="myboat_dynamics_plugin" />
+
+  
+
+</robot>

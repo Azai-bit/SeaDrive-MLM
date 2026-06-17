@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- !=========船体参数配置============= -->
+
+  <!-- !船体外部参数 -->
+  <!-- 线速度和角速度控制比例,根据预期控制情况调节 -->
+  <arg name="linear_scaling"  default="1.0"/>
+  <arg name="angular_scaling" default="1.0"/>
+
+
+  <!-- !船体内部参数: -->
+  <!-- 推进力 -->
+  <arg name="maxForceFwd"   default="164.0"/>
+  <arg name="maxForceRev"   default="-100.0"/>
+
+  <!-- PID -->
+  <param name="/myboat/kp" value="300.0" />
+  <param name="/myboat/ki" value="0.0" />
+  <param name="/myboat/kd" value="20.0" />
+
+  <!-- 水体参数 -->
+  <arg name="waterLevel"    default="0"/>
+  <arg name="waterDensity"  default="1000"/>
+  <!-- 系数 -->
+  <arg name="xDotU" default="2.0"/>
+  <arg name="yDotV" default="12.0"/>
+  <arg name="zDotW" default="0.1"/>
+  <arg name="kDotP" default="0.1"/>
+  <arg name="mDotQ" default="0.1"/>
+  <arg name="nDotR" default="2.0"/>
+  <!-- 阻尼系数：Surge (x) -->
+  <arg name="xU"  default="6.8"/>
+  <arg name="xUU" default="8.0"/>
+  <!-- 阻尼系数：Sway (y) -->
+  <arg name="yV"  default="6.0"/>
+  <arg name="yVV" default="0.8"/>
+  <!-- 阻尼系数：Heave (z) -->
+  <arg name="zW"  default="20.0"/>
+  <arg name="zWW" default="0.0"/>
+  <!-- 阻尼系数：Roll (k) -->
+  <arg name="kP"  default="20.0"/>
+  <arg name="kPP" default="0.0"/>
+  <!-- 阻尼系数：Pitch (m) -->
+  <arg name="mQ"  default="20.0"/>
+  <arg name="mQQ" default="0.0"/>
+  <!-- 阻尼系数：Yaw (n) -->
+  <arg name="nR"  default="5.4"/>
+  <arg name="nRR" default="1.0"/>
+  <!-- 几何参数 -->
+  <arg name="hullRadius"  default="0.2"/>
+  <arg name="boatWidth"   default="0.5"/>
+  <arg name="boatLength"  default="1.8"/>
+
+  <!-- !================= -->
+
+
+  <arg name="world" default="$(find myboat_gazebo)/worlds/myocean3.world" />
+  <arg name="gui" default="true" />
+  <arg name="namespace" default="myboat"/>
+  <arg name="paused" default="false"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name"   value="$(arg world)"/>
+    <arg name="paused"       value="$(arg paused)"/>
+    <arg name="gui"          value="$(arg gui)" />
+    <arg name="use_sim_time" value="true"/>
+    <arg name="verbose"      value="false"/>
+  </include>
+
+  <!-- !model -->
+  <arg name="urdf" default="$(find myboat_description)/urdf_myboat/myboat.xacro"/>
+  <param name="$(arg namespace)/robot_description"
+        command="$(find xacro)/xacro --inorder '$(arg urdf)'
+                  namespace:=$(arg namespace)
+                  maxForceFwd:=$(arg maxForceFwd)
+                  maxForceRev:=$(arg maxForceRev)
+
+                  waterLevel:=$(arg waterLevel)
+                  waterDensity:=$(arg waterDensity)
+
+                  xDotU:=$(arg xDotU)
+                  yDotV:=$(arg yDotV)
+                  zDotW:=$(arg zDotW)
+                  kDotP:=$(arg kDotP)
+                  mDotQ:=$(arg mDotQ)
+                  nDotR:=$(arg nDotR)
+
+                  xU:=$(arg xU)
+                  xUU:=$(arg xUU)
+                  yV:=$(arg yV)
+                  yVV:=$(arg yVV)
+                  zW:=$(arg zW)
+                  zWW:=$(arg zWW)
+                  kP:=$(arg kP)
+                  kPP:=$(arg kPP)
+                  mQ:=$(arg mQ)
+                  mQQ:=$(arg mQQ)
+                  nR:=$(arg nR)
+                  nRR:=$(arg nRR)
+
+                  hullRadius:=$(arg hullRadius)
+                  boatWidth:=$(arg boatWidth)
+                  boatLength:=$(arg boatLength)
+      "/>
+
+  <arg name="x" default="-484.83" />
+  <arg name="y" default="187.72" />
+  <arg name="z" default="0.1" />
+  <arg name="P" default="0" />
+  <arg name="R" default="0" />
+  <arg name="Y" default="1" />
+  <node name="spawn_model" pkg="gazebo_ros" type="spawn_model"
+        args="-x $(arg x) -y $(arg y) -z $(arg z)
+              -R $(arg R) -P $(arg P) -Y $(arg Y)
+              -urdf -param $(arg namespace)/robot_description
+              -model myboat"/>
+
+  <node pkg="myboat_gazebo" type="twist2thrust.py" name="twist2thrust" output="screen" args="--keyboard">
+    <remap from="left_cmd" to="/$(arg namespace)/thrusters/left_thrust_cmd"/>
+    <remap from="right_cmd" to="/$(arg namespace)/thrusters/right_thrust_cmd"/>
+
+    <param name="linear_scaling"  type="double" value="$(arg linear_scaling)"/>
+    <param name="angular_scaling" type="double" value="$(arg angular_scaling)"/>
+  </node>
+
+</launch>

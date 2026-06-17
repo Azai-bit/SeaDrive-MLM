@@ -1,0 +1,174 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="myboat">
+  <link name="myboat/base_link">
+  </link>
+  <joint name="myboat/dummy_joint" type="fixed">
+    <parent link="myboat/base_link"/>
+    <child link="myboat/dummy_link"/>
+    <origin xyz="0 0 0.30" rpy="0 0 0"/>
+  </joint>
+  <link name="myboat/dummy_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://myboat_description/meshes/myboat_body.STL"/>
+      </geometry>
+      <material name="base_material">
+        <diffuse>1.0 1.0 1.0</diffuse>
+        <specular>1.0 1.0 1.0</specular>
+        <pbr>
+          <metal>
+            <albedo_map>package://myboat_description/models/materials/textures/Boat_Albedo.png</albedo_map>
+            <metalness_map>package://myboat_description/models/materials/textures/Boat_Metalness.png</metalness_map>
+            <roughness_map>package://myboat_description/models/materials/textures/Boat_Roughness.png</roughness_map>
+          </metal>
+        </pbr>
+        <script>
+          <uri>package://myboat_description/models/materials/scripts/</uri>
+          <uri>package://myboat_description/models/materials/textures/</uri>
+          <name>UrbanTile/Boat_Diffuse</name>
+        </script>
+      </material>
+    </visual>
+    <collision name="collision">
+      <geometry>
+        <box size="1.8 0.5 0.25"/>
+      </geometry>
+      <origin xyz="0 0 -0.125" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="30.0"/>
+      <!-- <mass value="15.0"/> -->
+      <inertia
+        ixx="0.08"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="4.0"
+        iyz="0.0"
+        izz="4.1" />
+    </inertial>
+  </link>
+  <gazebo reference="myboat/dummy_link">
+      <material>Gazebo/Yellow</material>
+  </gazebo>    
+
+    <link name="zju_link1">
+        <visual>
+            <origin xyz=" 0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://myboat_description/meshes/roam-zju.STL" />
+            </geometry>
+            <material name="whilte" />
+        </visual>
+    </link>    
+    <joint name="zju_joint1" type="fixed">
+        <origin xyz="0.1 -0.22 -0.12" rpy="0 0 0" />
+        <parent link="myboat/dummy_link"/>
+        <child link="zju_link1"/>
+    </joint>
+
+
+    <link name="zju_link2">
+        <visual>
+            <origin xyz=" 0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://myboat_description/meshes/roam-zju.STL" />
+            </geometry>
+            <material name="whilte" />
+        </visual>
+    </link>    
+    <joint name="zju_joint2" type="fixed">
+        <origin xyz="0.1 0.23 -0.12" rpy="0 0 3.14" />
+        <parent link="myboat/dummy_link"/>
+        <child link="zju_link2"/>
+    </joint>
+
+    <gazebo reference="zju_link1">
+        <material>Gazebo/Black</material>
+    </gazebo>    
+
+    <gazebo reference="zju_link2">
+        <material>Gazebo/Black</material>
+    </gazebo> 
+
+    <xacro:arg name="locked" default="false" />
+    <xacro:arg name="thruster_config" default="H" />
+    <xacro:arg name="camera_enabled" default="true" />
+    <xacro:arg name="gps_enabled" default="false" />
+    <xacro:arg name="imu_enabled" default="false" />
+    <xacro:arg name="lidar_enabled" default="true" />
+    <xacro:arg name="ground_truth_enabled" default="false" />
+    <xacro:arg name="vrx_sensors_enabled" default="false" />
+    <xacro:arg name="pinger_enabled" default="false" />
+    <xacro:arg name="ball_shooter_enabled" default="false" />
+    
+    <xacro:arg name="thruster_namespace" default="thrusters/"/>
+    <xacro:arg name="camera_namespace" default="cameras/"/>  
+    <xacro:arg name="sensor_namespace" default="sensors/"/>
+    <xacro:arg name="pinger_namespace" default="pingers/"/>
+    <xacro:arg name="shooter_namespace" default="shooters/"/>
+
+    <xacro:property name="thruster_namespace" value="$(arg thruster_namespace)" scope="global" />
+    <xacro:property name="camera_namespace" value="$(arg camera_namespace)" scope="global" />
+    <xacro:property name="sensor_namespace" value="$(arg sensor_namespace)" scope="global" />
+    <xacro:property name="pinger_namespace" value="$(arg pinger_namespace)" scope="global" />
+    <xacro:property name="shooter_namespace" value="$(arg shooter_namespace)" scope="global" />
+    
+
+    <xacro:if value="$(arg camera_enabled)">
+      <!-- Keep the VLM camera above wave height so nearby target vessels are
+           visible in head-on/crossing encounters instead of being hidden by water. -->
+      <xacro:wamv_camera name="front_camera"
+                         x="0.75" y="0"
+                         z="1.6" post_z_from="1.1"
+                         P="${radians(15)}" />
+
+      <!-- 在 Gazebo 中隐藏相机实体（仅隐藏可视模型，不影响图像生成和碰撞） -->
+      <gazebo reference="${namespace}/front_camera_link">
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0 0 0 0</specular>
+          <emissive>0 0 0 0</emissive>
+        </material>
+      </gazebo>
+      <gazebo reference="${namespace}/front_camera_post_link">
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0 0 0 0</specular>
+          <emissive>0 0 0 0</emissive>
+        </material>
+      </gazebo>
+      <gazebo reference="${namespace}/front_camera_post_arm_link">
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0 0 0 0</specular>
+          <emissive>0 0 0 0</emissive>
+        </material>
+      </gazebo>
+    </xacro:if>
+    
+    <!-- 添加模拟 GPS -->
+    <xacro:if value="$(arg gps_enabled)">
+      <xacro:wamv_gps name="gps_wamv" x="-0.85" />
+    </xacro:if>
+    
+    <!-- 添加模拟 IMU -->
+    <xacro:if value="$(arg imu_enabled)">
+      <xacro:wamv_imu name="imu_wamv" y="-0.2" />
+    </xacro:if>
+    
+    <!-- 添加 3D 激光雷达（位置与 TF 中 myboat/sensors/lidar_wamv_link 对齐） -->
+    <xacro:if value="$(arg lidar_enabled)">
+      <!-- x 与原始一致，降低 z 以匹配 tf_lidar_myboat_mount 的 0.8m 高度 -->
+      <xacro:lidar name="lidar_wamv" x="-0.4" y="0" z="0.8" type="32_beam"/>
+    </xacro:if>
+
+    <!-- 添加 P3D 真实值 -->
+    <xacro:if value="$(arg ground_truth_enabled)">
+      <xacro:wamv_p3d name="p3d_wamv"/>
+    </xacro:if>
+
+</robot>

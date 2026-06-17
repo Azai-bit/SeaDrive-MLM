@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="target2_experimental_mesh">
+  <xacro:arg name="namespace" default="target_boat_2"/>
+  <xacro:arg name="mesh_file" default="package://myboat_description/meshes/experimental_target2/target2.obj"/>
+  <xacro:arg name="mesh_scale" default="6.0 6.0 6.0"/>
+  <xacro:arg name="mesh_xyz" default="0 0 -0.4"/>
+  <xacro:arg name="mesh_rpy" default="1.57079632679 0 0"/>
+  <xacro:arg name="collision_size" default="7.05 1.8 3.3"/>
+  <xacro:arg name="collision_xyz" default="0.225 0 1.35"/>
+  <xacro:arg name="mass" default="260.0"/>
+
+  <link name="$(arg namespace)/base_link">
+    <visual>
+      <origin xyz="$(arg mesh_xyz)" rpy="$(arg mesh_rpy)"/>
+      <geometry>
+        <mesh filename="$(arg mesh_file)" scale="$(arg mesh_scale)"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="$(arg collision_xyz)" rpy="0 0 0"/>
+      <geometry>
+        <box size="$(arg collision_size)"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="$(arg mass)"/>
+      <inertia ixx="180.0" ixy="0.0" ixz="0.0" iyy="620.0" iyz="0.0" izz="710.0"/>
+    </inertial>
+  </link>
+</robot>

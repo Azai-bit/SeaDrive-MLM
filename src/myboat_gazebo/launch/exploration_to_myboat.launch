@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- 启动 exploration 到 myboat 的适配器节点 -->
+  <node pkg="myboat_gazebo" type="exploration_to_myboat" name="exploration_to_myboat" output="screen">
+    <!-- 最大前进速度 (m/s)，与规划器 max_vel 保持一致 -->
+    <param name="max_linear_vel" value="0.5"/>
+    
+    <!-- 最大转向速度 (rad/s) -->
+    <!-- 提高原地转向速度，让船更快对齐目标方向 -->
+    <param name="max_angular_vel" value="1.2"/>
+    
+    <!-- 线速度控制增益（距离到速度的系数） -->
+    <param name="kp_linear" value="1.0"/>
+    
+    <!-- 角速度控制增益（角度误差到角速度的系数） -->
+    <param name="kp_angular" value="2.2"/>
+    
+    <!-- 到达目标点的距离阈值 (m) -->
+    <param name="distance_threshold" value="0.20"/>
+
+    <!-- 允许在开始前进前的最大偏航误差 (rad)，减小可避免大角度斜着冲 -->
+    <param name="yaw_align_threshold" value="0.90"/>
+
+    <!-- 是否优先使用规划器给出的 yaw；舵控船建议关闭，始终朝目标点方向航行 -->
+    <param name="use_planned_yaw" value="false"/>
+    <param name="ff_vel_gain" value="0.7"/>
+    <param name="cmd_linear_acc_limit" value="0.8"/>
+    <param name="cmd_angular_acc_limit" value="1.6"/>
+    <param name="min_moving_speed" value="0.10"/>
+
+    <!-- Cascaded yaw PD (yaw error -> omega_des -> omega_cmd) -->
+    <param name="kd_yaw" value="0.2"/>
+    <param name="kp_omega" value="1.0"/>
+    <param name="kd_omega" value="0.05"/>
+    <param name="omega_meas_filt_alpha" value="0.7"/>
+  </node>
+</launch>

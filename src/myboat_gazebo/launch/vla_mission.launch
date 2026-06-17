@@ -1,0 +1,96 @@
+<launch>
+  <!-- VLA 大模型任务节点：基于传感器融合上色 BEV 图询问高价值区域，并更新 /sdf_map/value_map -->
+  <node pkg="myboat_gazebo"
+        type="vla_mission_node.py"
+        name="vla_mission_node"
+        output="screen">
+    <param name="image_topic" value="/myboat/sensors/cameras/front_camera/image_raw"/>
+    <param name="mission_topic" value="/vla/mission_text"/>
+    <param name="odom_topic" value="/myboat/odom"/>
+    <param name="cloud_topic" value="/myboat/sensors/lidar_wamv/points"/>
+    <param name="explored_grid_topic" value="/sdf_map/explored_grid"/>
+    <param name="value_map_topic" value="/sdf_map/value_map"/>
+    <param name="camera_hfov_deg" value="90.0"/>
+    <param name="camera_vfov_deg" value="60.0"/>
+    <param name="cloud_proj_max_points" value="12000"/>
+    <param name="lidar_mount_x" value="-0.4"/>
+    <param name="lidar_mount_y" value="0.0"/>
+    <param name="lidar_mount_z" value="0.8"/>
+    <param name="camera_mount_x" value="0.75"/>
+    <param name="camera_mount_y" value="0.0"/>
+    <param name="camera_mount_z" value="0.5"/>
+    <param name="camera_mount_roll" value="0.0"/>
+    <param name="camera_mount_pitch" value="0.261799"/>
+    <param name="camera_mount_yaw" value="0.0"/>
+    <param name="use_tf_extrinsics" value="true"/>
+    <param name="base_link_frame" value="myboat/base_link"/>
+    <param name="camera_frame" value="myboat/front_camera_link_optical"/>
+    <param name="tf_lookup_timeout_s" value="0.05"/>
+    <param name="camera_frame_is_optical" value="true"/>
+    <param name="projection_mode" value="auto"/>
+    <param name="projection_flip_horizontal" value="true"/>
+    <param name="semantic_base_z_min" value="-0.30"/>
+    <param name="semantic_min_range_m" value="1.0"/>
+    <param name="semantic_max_range_m" value="25.0"/>
+    <param name="semantic_paint_radius_m" value="1.0"/>
+    <param name="semantic_decay" value="0.92"/>
+    <param name="semantic_threshold" value="0.20"/>
+    <param name="semantic_col_step_px" value="8"/>
+    <param name="semantic_min_ratio" value="0.06"/>
+    <param name="semantic_red_min_ratio" value="0.06"/>
+    <param name="semantic_black_min_ratio" value="0.05"/>
+    <param name="semantic_ratio_margin" value="0.01"/>
+    <param name="semantic_score_margin" value="0.05"/>
+    <param name="semantic_strength_boost" value="3.5"/>
+    <param name="semantic_strength_min" value="0.35"/>
+    <param name="event_trigger_enable" value="false"/>
+    <param name="red_pixel_trigger_threshold" value="280"/>
+    <param name="red_pixel_ratio_trigger_threshold" value="0.0040"/>
+    <param name="event_min_interval_s" value="8.0"/>
+    <param name="event_check_roi_top_ratio" value="0.35"/>
+    <param name="value_trace_steps" value="4"/>
+    <param name="value_disk_edge_gain" value="0.30"/>
+    <param name="value_region_radius_scale" value="1.8"/>
+    <param name="value_diffuse_enable" value="true"/>
+    <param name="value_diffuse_kernel" value="9"/>
+    <param name="value_diffuse_sigma" value="2.2"/>
+    <param name="value_diffuse_mix" value="0.60"/>
+    <param name="value_diffuse_min_value" value="4.0"/>
+    <param name="value_ema_alpha" value="0.35"/>
+    <param name="score_update_period_s" value="2.0"/>
+    <param name="vlm_min_interval_s" value="30.0"/>
+    <param name="vlm_trigger_mutation_mean_threshold" value="1.2"/>
+    <param name="vlm_trigger_mutation_sum_threshold" value="1800.0"/>
+    <param name="candidate_count" value="12"/>
+    <param name="candidate_sector_count" value="12"/>
+    <param name="region_grid_rows" value="10"/>
+    <param name="region_grid_cols" value="10"/>
+    <param name="candidate_window_radius_m" value="2.0"/>
+    <param name="candidate_min_frontier_ratio" value="0.03"/>
+    <param name="candidate_paint_radius_m" value="3.0"/>
+    <param name="candidate_border_margin_m" value="3.0"/>
+    <param name="candidate_min_spacing_m" value="4.0"/>
+    <param name="candidate_global_stride_cells" value="8"/>
+    <param name="candidate_geom_mix" value="0.15"/>
+    <param name="candidate_require_vlm_score" value="true"/>
+    <param name="candidate_min_scored_ratio" value="0.50"/>
+    <param name="candidate_missing_fill_scale" value="0.75"/>
+    <param name="candidate_semantic_inject_enable" value="false"/>
+    <param name="candidate_debug_log_enable" value="false"/>
+    <param name="profile_time_enable" value="false"/>
+    <param name="debug_unknown_only_mode" value="false"/>
+    <param name="debug_unknown_window_m" value="4.0"/>
+    <param name="debug_unknown_use_ema" value="false"/>
+    <rosparam param="candidate_distance_bins_m">[6.0, 12.0, 20.0, 30.0]</rosparam>
+    <param name="value_semantic_boost" value="60.0"/>
+    <param name="value_semantic_min_score" value="0.10"/>
+    <param name="sync_enable" value="true"/>
+    <param name="sync_max_dt_s" value="0.24"/>
+    <param name="sync_buffer_size" value="60"/>
+    <param name="prompt_min_regions" value="6"/>
+    <param name="prompt_max_regions" value="10"/>
+    <!-- 图像保存目录，需与节点内默认一致 -->
+    <param name="image_save_dir" value="tmp"/>
+    <param name="bev_image_path" value="tmp/fused_bev_latest.png"/>
+  </node>
+</launch>

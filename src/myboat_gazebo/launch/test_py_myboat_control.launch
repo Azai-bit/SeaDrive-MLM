@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+  
+  <node pkg="myboat_gazebo" type="test_py_myboat_control.py" name="test_py_myboat_control" output="screen" />
+
+  
+</launch>

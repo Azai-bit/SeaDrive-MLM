@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>myboat_gazebo</name>
+  <version>0.0.0</version>
+  <description>The myboat_gazebo package</description>
+
+  <maintainer email="robogo@todo.todo">robogo</maintainer>
+  <license>TODO</license>
+
+  <!-- Build tool -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Build dependencies (compile-time) -->
+  <build_depend>gazebo_dev</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>xacro</build_depend>
+  <build_depend>wave_gazebo_plugins</build_depend>
+  <build_depend>usv_msgs</build_depend>
+  <build_depend>quadrotor_msgs</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+
+  <!-- Build export dependencies (for packages that link against this one) -->
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>gazebo_dev</build_export_depend>
+  <build_export_depend>sensor_msgs</build_export_depend>
+  <build_export_depend>wave_gazebo_plugins</build_export_depend>
+  <build_export_depend>usv_msgs</build_export_depend>
+  <build_export_depend>quadrotor_msgs</build_export_depend>
+  <build_export_depend>tf</build_export_depend>
+  <build_export_depend>visualization_msgs</build_export_depend>
+
+  <!-- Exec dependencies (runtime) -->
+  <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>wave_gazebo_plugins</exec_depend>
+  <exec_depend>usv_msgs</exec_depend>
+  <exec_depend>quadrotor_msgs</exec_depend>
+  <exec_depend>tf</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+
+  <!-- System dependency: Eigen3 -->
+  <depend>eigen</depend> 
+
+  <!-- Optional: if you have launch files or need xacro at runtime -->
+  <exec_depend>robot_state_publisher</exec_depend>
+
+  <export>
+    <!-- Gazebo plugin path (optional but recommended) -->
+    <gazebo_ros plugin_path="${prefix}/lib" />
+  </export>
+</package>

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!--
+    从 Gazebo 的 /gazebo/model_states 中提取某个模型的位姿与速度，
+    发布为标准的 nav_msgs/Odometry，用于 exploration 等高层模块。
+  -->
+
+  <!-- Gazebo 中的模型名称，需要与 spawn_model 时的 -model 一致 -->
+  <arg name="model_name" default="myboat"/>
+
+  <!-- 输出的 odom topic，默认对接 Myboat 与 exploration -->
+  <arg name="odom_topic" default="/myboat/odom"/>
+
+  <!-- 里程计参考坐标系，一般为 world -->
+  <arg name="world_frame" default="world"/>
+
+  <!-- 载体坐标系 -->
+  <arg name="base_frame" default="myboat/base_link"/>
+
+  <node pkg="wamv_gazebo"
+        type="odom_publisher"
+        name="odom_publisher"
+        output="screen">
+
+    <param name="model_name"  value="$(arg model_name)"/>
+    <param name="odom_topic"  value="$(arg odom_topic)"/>
+    <param name="world_frame" value="$(arg world_frame)"/>
+    <param name="base_frame"  value="$(arg base_frame)"/>
+  </node>
+
+</launch>
+

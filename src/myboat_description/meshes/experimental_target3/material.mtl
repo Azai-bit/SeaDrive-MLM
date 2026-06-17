@@ -1,0 +1,14 @@
+newmtl Material
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.120 0.120 0.120
+Ns 18.000
+Ke 0.120 0.120 0.120
+Ni 1.500
+d 1.0
+illum 2
+map_Ka texture_pbr_20250901.png
+map_Kd texture_pbr_20250901.png
+map_Pm texture_pbr_20250901_metallic.png
+map_Pr texture_pbr_20250901_roughness.png
+map_Bump -bm 1.0 texture_pbr_20250901_normal.png

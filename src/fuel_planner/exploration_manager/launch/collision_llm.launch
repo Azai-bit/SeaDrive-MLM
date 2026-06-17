@@ -1,0 +1,238 @@
+<launch>
+  <!-- standalone VLM COLREG decision launch -->
+  <!-- 默认模型名与本地 OpenAI-compatible VLM 服务保持一致；api_url 可由脚本或 roslaunch 参数覆盖 -->
+  <arg name="trigger_topic" default="/collision/trigger" />
+  <arg name="state_topic" default="/collision/state_estimation" />
+  <arg name="decision_topic" default="/collision/llm_decision" />
+  <arg name="cmd_topic" default="/collision/llm_cmd_vel" />
+  <arg name="llm_backend" default="http" />
+  <arg name="normal_forward_speed" default="1.6" />
+  <!-- For remote services, provide credentials through environment variables. -->
+  <arg name="api_url" default="https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions" />
+  <arg name="api_model" default="qwen3-vl-2b-instruct-local" />
+  <arg name="api_max_output_tokens" default="96" />
+  <arg name="api_force_json_mode" default="true" />
+  <arg name="api_repeat_retry_enable" default="true" />
+  <arg name="api_repeat_ngram_words" default="8" />
+  <arg name="api_repeat_ngram_min_count" default="3" />
+  <arg name="api_no_json_retry_chars" default="180" />
+  <arg name="dinov2_model_name" default="facebook/dinov2-base" />
+  <arg name="dinov2_device" default="" />
+  <arg name="dinov2_prototypes_dir" default="$(find myboat_gazebo)/resource/dinov2_prototypes" />
+  <arg name="dinov2_min_similarity" default="0.34" />
+  <arg name="dinov2_similarity_margin" default="0.035" />
+  <arg name="dinov2_heuristic_only" default="false" />
+  <arg name="vla_image_topic" default="/myboat/sensors/cameras/front_camera/image_raw" />
+  <arg name="vla_image_path" default="" />
+  <arg name="vla_image_url" default="" />
+  <arg name="vla_image_source" default="pointcloud_bev" />
+  <arg name="vla_global_history_s" default="3.0" />
+  <arg name="vla_global_image_width" default="1000" />
+  <arg name="vla_global_image_height" default="1000" />
+  <arg name="vla_global_min_span_m" default="30.0" />
+  <arg name="ais_target_odom_topic" default="/target_boat/odom" />
+  <arg name="ais_target2_odom_topic" default="/target_boat_2/odom" />
+  <arg name="ais_target3_odom_topic" default="/target_boat_3/odom" />
+  <arg name="vla_goal_x" default="" />
+  <arg name="vla_goal_y" default="" />
+  <arg name="vla_camera_video_enable" default="true" />
+  <arg name="vla_camera_video_frame_count" default="4" />
+  <arg name="vla_camera_video_interval_s" default="2.5" />
+  <arg name="vla_camera_video_window_s" default="10.0" />
+  <arg name="vla_camera_video_buffer_max_frames" default="24" />
+  <arg name="vla_bev_pointcloud_topic" default="/myboat/sensors/lidar_wamv/points" />
+  <arg name="vla_bev_cloud_max_age_s" default="1.5" />
+  <arg name="vla_bev_range_forward_m" default="60.0" />
+  <arg name="vla_bev_range_backward_m" default="60.0" />
+  <arg name="vla_bev_range_side_m" default="35.0" />
+  <arg name="vla_bev_z_min_m" default="-1.5" />
+  <arg name="vla_bev_z_max_m" default="4.0" />
+  <arg name="vla_bev_max_points" default="120000" />
+  <arg name="vla_bev_image_width" default="1000" />
+  <arg name="vla_bev_image_height" default="1000" />
+  <arg name="vla_bev_track_box_margin_m" default="1.0" />
+  <arg name="vla_bev_fallback_to_camera" default="false" />
+  <arg name="vla_bev_warmup_s" default="2.0" />
+  <arg name="vla_bev_warmup_min_frames" default="3" />
+  <arg name="vla_target_history_warmup_s" default="2.0" />
+  <arg name="vla_target_history_warmup_min_samples" default="3" />
+  <arg name="vla_target_history_warmup_min_ready_targets" default="1" />
+  <arg name="llm_use_image_input" default="true" />
+  <arg name="vla_prompt_track_input_enable" default="true" />
+  <arg name="vla_prompt_mode" default="full" />
+  <arg name="vla_camera_hfov_deg" default="90.0" />
+  <arg name="vla_snapshot_on_trigger" default="true" />
+  <arg name="vla_snapshot_dir" default="tmp" />
+  <arg name="vla_image_buffer_duration_s" default="1.0" />
+  <arg name="vla_image_buffer_max_frames" default="12" />
+  <arg name="vla_annotated_snapshot_enable" default="true" />
+  <arg name="vla_trial_index" default="" />
+  <arg name="llm_fov_gate_enable" default="true" />
+  <arg name="llm_fov_gate_margin_deg" default="6.0" />
+  <arg name="llm_fov_gate_min_forward_m" default="1.0" />
+  <arg name="llm_fov_gate_max_distance_m" default="20.0" />
+  <arg name="llm_fov_gate_state_max_distance_m" default="20.0" />
+  <arg name="llm_fov_gate_min_visible_tracks" default="1" />
+  <arg name="llm_fov_gate_require_all_tracks" default="true" />
+  <arg name="llm_require_unknown_track_in_fov" default="true" />
+  <arg name="llm_fov_gate_state_fallback_enable" default="true" />
+  <arg name="llm_fov_gate_state_fallback_after_s" default="0.0" />
+  <arg name="llm_fov_gate_soft_enable" default="true" />
+  <arg name="llm_fov_gate_soft_after_s" default="0.0" />
+  <arg name="llm_fov_gate_soft_max_targets" default="3" />
+  <arg name="llm_fov_gate_partial_after_s" default="2.0" />
+  <arg name="llm_fov_gate_bypass_distance" default="true" />
+  <arg name="perception_targets_topic" default="/collision/perception/targets" />
+  <arg name="risk_topic" default="/collision/risk" />
+  <arg name="llm_trigger_distance_m" default="11.0" />
+  <arg name="sensor_front_hazard_enable" default="true" />
+  <arg name="sensor_front_hazard_range_m" default="20.0" />
+  <arg name="sensor_front_hazard_bearing_deg" default="45.0" />
+  <arg name="sensor_front_hazard_min_forward_m" default="1.0" />
+  <arg name="llm_pretrigger_enable" default="true" />
+  <arg name="llm_pretrigger_distance_m" default="35.0" />
+  <arg name="llm_require_pointcloud_distance" default="true" />
+  <arg name="llm_wait_image_on_entry" default="true" />
+  <arg name="llm_distance_init_grace_s" default="0.0" />
+  <arg name="llm_call_requires_trigger" default="true" />
+  <arg name="llm_require_trigger_low_before_call" default="true" />
+  <arg name="llm_disable_after_first_success" default="true" />
+  <arg name="llm_once_per_trigger" default="true" />
+  <arg name="llm_update_interval_s" default="10.0" />
+  <arg name="pending_safety_enable" default="true" />
+  <arg name="pending_safety_speed_scale" default="0.35" />
+  <arg name="api_timeout" default="60.0" />
+  <arg name="vlm_check_topic" default="/collision/vlm_check" />
+  <arg name="vlm_check_enable" default="false" />
+  <arg name="vlm_check_raw_max_chars" default="0" />
+  <arg name="debug_enable" default="false" />
+  <arg name="terminal_llm_io_enable" default="true" />
+  <arg name="terminal_clean_mode" default="true" />
+  <arg name="llm_io_log_path" default="" />
+  <arg name="vla_event_log_path" default="" />
+  <arg name="llm_gate_status_log_interval_s" default="5.0" />
+  <arg name="terminal_status_enable" default="false" />
+  <arg name="terminal_status_interval_s" default="1.0" />
+  <arg name="python_launch_prefix" default="" />
+  <node pkg="myboat_gazebo" type="colregs_llm_decision_node.py" name="colregs_llm_decision_node" output="screen" launch-prefix="$(arg python_launch_prefix)">
+    <param name="trigger_topic" value="$(arg trigger_topic)" />
+    <param name="state_topic" value="$(arg state_topic)" />
+    <param name="decision_topic" value="$(arg decision_topic)" />
+    <param name="cmd_topic" value="$(arg cmd_topic)" />
+    <param name="llm_enable" value="true" />
+    <param name="llm_backend" value="$(arg llm_backend)" />
+    <param name="api_url" value="$(arg api_url)" />
+    <param name="api_model" value="$(arg api_model)" />
+    <param name="api_max_output_tokens" value="$(arg api_max_output_tokens)" />
+    <param name="dinov2_model_name" value="$(arg dinov2_model_name)" />
+    <param name="dinov2_device" value="$(arg dinov2_device)" />
+    <param name="dinov2_prototypes_dir" value="$(arg dinov2_prototypes_dir)" />
+    <param name="dinov2_min_similarity" value="$(arg dinov2_min_similarity)" />
+    <param name="dinov2_similarity_margin" value="$(arg dinov2_similarity_margin)" />
+    <param name="dinov2_heuristic_only" value="$(arg dinov2_heuristic_only)" />
+    <param name="api_key" value="$(optenv DASHSCOPE_API_KEY)" />
+    <param name="api_key_env" value="DASHSCOPE_API_KEY" />
+    <param name="api_force_json_mode" value="$(arg api_force_json_mode)" />
+    <param name="api_repeat_retry_enable" value="$(arg api_repeat_retry_enable)" />
+    <param name="api_repeat_ngram_words" value="$(arg api_repeat_ngram_words)" />
+    <param name="api_repeat_ngram_min_count" value="$(arg api_repeat_ngram_min_count)" />
+    <param name="api_no_json_retry_chars" value="$(arg api_no_json_retry_chars)" />
+    <param name="api_timeout" value="$(arg api_timeout)" />
+    <param name="api_temperature" value="0.1" />
+    <param name="vla_image_topic" value="$(arg vla_image_topic)" />
+    <param name="vla_image_path" value="$(arg vla_image_path)" />
+    <param name="vla_image_url" value="$(arg vla_image_url)" />
+    <param name="vla_image_source" value="$(arg vla_image_source)" />
+    <param name="vla_global_history_s" value="$(arg vla_global_history_s)" />
+    <param name="vla_global_image_width" value="$(arg vla_global_image_width)" />
+    <param name="vla_global_image_height" value="$(arg vla_global_image_height)" />
+    <param name="vla_global_min_span_m" value="$(arg vla_global_min_span_m)" />
+    <param name="ais_target_odom_topic" value="$(arg ais_target_odom_topic)" />
+    <param name="ais_target2_odom_topic" value="$(arg ais_target2_odom_topic)" />
+    <param name="ais_target3_odom_topic" value="$(arg ais_target3_odom_topic)" />
+    <param name="vla_goal_x" value="$(arg vla_goal_x)" />
+    <param name="vla_goal_y" value="$(arg vla_goal_y)" />
+    <param name="vla_camera_video_enable" value="$(arg vla_camera_video_enable)" />
+    <param name="vla_camera_video_frame_count" value="$(arg vla_camera_video_frame_count)" />
+    <param name="vla_camera_video_interval_s" value="$(arg vla_camera_video_interval_s)" />
+    <param name="vla_camera_video_window_s" value="$(arg vla_camera_video_window_s)" />
+    <param name="vla_camera_video_buffer_max_frames" value="$(arg vla_camera_video_buffer_max_frames)" />
+    <param name="vla_bev_pointcloud_topic" value="$(arg vla_bev_pointcloud_topic)" />
+    <param name="vla_bev_cloud_max_age_s" value="$(arg vla_bev_cloud_max_age_s)" />
+    <param name="vla_bev_range_forward_m" value="$(arg vla_bev_range_forward_m)" />
+    <param name="vla_bev_range_backward_m" value="$(arg vla_bev_range_backward_m)" />
+    <param name="vla_bev_range_side_m" value="$(arg vla_bev_range_side_m)" />
+    <param name="vla_bev_z_min_m" value="$(arg vla_bev_z_min_m)" />
+    <param name="vla_bev_z_max_m" value="$(arg vla_bev_z_max_m)" />
+    <param name="vla_bev_max_points" value="$(arg vla_bev_max_points)" />
+    <param name="vla_bev_image_width" value="$(arg vla_bev_image_width)" />
+    <param name="vla_bev_image_height" value="$(arg vla_bev_image_height)" />
+    <param name="vla_bev_track_box_margin_m" value="$(arg vla_bev_track_box_margin_m)" />
+    <param name="vla_bev_fallback_to_camera" value="$(arg vla_bev_fallback_to_camera)" />
+    <param name="vla_bev_warmup_s" value="$(arg vla_bev_warmup_s)" />
+    <param name="vla_bev_warmup_min_frames" value="$(arg vla_bev_warmup_min_frames)" />
+    <param name="vla_target_history_warmup_s" value="$(arg vla_target_history_warmup_s)" />
+    <param name="vla_target_history_warmup_min_samples" value="$(arg vla_target_history_warmup_min_samples)" />
+    <param name="vla_target_history_warmup_min_ready_targets" value="$(arg vla_target_history_warmup_min_ready_targets)" />
+    <param name="llm_use_image_input" value="$(arg llm_use_image_input)" />
+    <param name="vla_prompt_track_input_enable" value="$(arg vla_prompt_track_input_enable)" />
+    <param name="vla_prompt_mode" value="$(arg vla_prompt_mode)" />
+    <param name="vla_camera_hfov_deg" value="$(arg vla_camera_hfov_deg)" />
+    <param name="vla_image_max_age_s" value="1.5" />
+    <param name="vla_image_max_bytes" value="8388608" />
+    <param name="vla_image_buffer_duration_s" value="$(arg vla_image_buffer_duration_s)" />
+    <param name="vla_image_buffer_max_frames" value="$(arg vla_image_buffer_max_frames)" />
+    <param name="vla_annotated_snapshot_enable" value="$(arg vla_annotated_snapshot_enable)" />
+    <param name="vla_trial_index" value="$(arg vla_trial_index)" />
+    <param name="vla_snapshot_on_trigger" value="$(arg vla_snapshot_on_trigger)" />
+    <param name="vla_snapshot_dir" value="$(arg vla_snapshot_dir)" />
+    <param name="llm_fov_gate_enable" value="$(arg llm_fov_gate_enable)" />
+    <param name="llm_fov_gate_margin_deg" value="$(arg llm_fov_gate_margin_deg)" />
+    <param name="llm_fov_gate_min_forward_m" value="$(arg llm_fov_gate_min_forward_m)" />
+    <param name="llm_fov_gate_max_distance_m" value="$(arg llm_fov_gate_max_distance_m)" />
+    <param name="llm_fov_gate_state_max_distance_m" value="$(arg llm_fov_gate_state_max_distance_m)" />
+    <param name="llm_fov_gate_min_visible_tracks" value="$(arg llm_fov_gate_min_visible_tracks)" />
+    <param name="llm_fov_gate_require_all_tracks" value="$(arg llm_fov_gate_require_all_tracks)" />
+    <param name="llm_require_unknown_track_in_fov" value="$(arg llm_require_unknown_track_in_fov)" />
+    <param name="llm_fov_gate_state_fallback_enable" value="$(arg llm_fov_gate_state_fallback_enable)" />
+    <param name="llm_fov_gate_state_fallback_after_s" value="$(arg llm_fov_gate_state_fallback_after_s)" />
+    <param name="llm_fov_gate_soft_enable" value="$(arg llm_fov_gate_soft_enable)" />
+    <param name="llm_fov_gate_soft_after_s" value="$(arg llm_fov_gate_soft_after_s)" />
+    <param name="llm_fov_gate_soft_max_targets" value="$(arg llm_fov_gate_soft_max_targets)" />
+    <param name="llm_fov_gate_partial_after_s" value="$(arg llm_fov_gate_partial_after_s)" />
+    <param name="llm_fov_gate_bypass_distance" value="$(arg llm_fov_gate_bypass_distance)" />
+    <param name="perception_targets_topic" value="$(arg perception_targets_topic)" />
+    <param name="risk_topic" value="$(arg risk_topic)" />
+    <param name="llm_trigger_distance_m" value="$(arg llm_trigger_distance_m)" />
+    <param name="sensor_front_hazard_enable" value="$(arg sensor_front_hazard_enable)" />
+    <param name="sensor_front_hazard_range_m" value="$(arg sensor_front_hazard_range_m)" />
+    <param name="sensor_front_hazard_bearing_deg" value="$(arg sensor_front_hazard_bearing_deg)" />
+    <param name="sensor_front_hazard_min_forward_m" value="$(arg sensor_front_hazard_min_forward_m)" />
+    <param name="llm_pretrigger_enable" value="$(arg llm_pretrigger_enable)" />
+    <param name="llm_pretrigger_distance_m" value="$(arg llm_pretrigger_distance_m)" />
+    <param name="llm_require_pointcloud_distance" value="$(arg llm_require_pointcloud_distance)" />
+    <param name="vlm_check_enable" value="$(arg vlm_check_enable)" />
+    <param name="vlm_check_topic" value="$(arg vlm_check_topic)" />
+    <param name="vlm_check_raw_max_chars" value="$(arg vlm_check_raw_max_chars)" />
+    <param name="ollama_timeout" value="40.0" />
+    <param name="llm_once_per_trigger" value="$(arg llm_once_per_trigger)" />
+    <param name="llm_update_interval_s" value="$(arg llm_update_interval_s)" />
+    <param name="pending_safety_enable" value="$(arg pending_safety_enable)" />
+    <param name="pending_safety_speed_scale" value="$(arg pending_safety_speed_scale)" />
+    <param name="llm_call_requires_trigger" value="$(arg llm_call_requires_trigger)" />
+    <param name="llm_require_trigger_low_before_call" value="$(arg llm_require_trigger_low_before_call)" />
+    <param name="llm_disable_after_first_success" value="$(arg llm_disable_after_first_success)" />
+    <param name="debug_enable" value="$(arg debug_enable)" />
+    <param name="terminal_llm_io_enable" value="$(arg terminal_llm_io_enable)" />
+    <param name="terminal_clean_mode" value="$(arg terminal_clean_mode)" />
+    <param name="llm_io_log_path" value="$(arg llm_io_log_path)" />
+    <param name="vla_event_log_path" value="$(arg vla_event_log_path)" />
+    <param name="llm_gate_status_log_interval_s" value="$(arg llm_gate_status_log_interval_s)" />
+    <param name="terminal_status_enable" value="$(arg terminal_status_enable)" />
+    <param name="terminal_status_interval_s" value="$(arg terminal_status_interval_s)" />
+    <rosparam param="ollama_command">["ollama", "run", "qwen3.5:0.8b", "--think=false"]</rosparam>
+    <param name="starboard_turn_rate" value="-0.5" />
+    <param name="safe_forward_speed" value="0.6" />
+    <param name="normal_forward_speed" value="$(arg normal_forward_speed)" />
+  </node>
+</launch>

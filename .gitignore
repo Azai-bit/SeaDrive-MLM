@@ -1,0 +1,59 @@
+# Catkin and ROS build outputs
+/build/
+/devel/
+/install/
+/.catkin_tools/
+/logs/
+/log/
+
+# Runtime outputs
+/tmp/
+/results/
+/monte_carlo/
+*.bag
+*.db3
+*.active
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Local editor and tool state
+.vscode/
+.idea/
+.agents/
+.codex/
+*.swp
+*.swo
+
+# Local credentials and environment files
+.env
+.env.*
+*.key
+*.pem
+
+# ML training artifacts and generated datasets
+training_results/
+checkpoints/
+runs/
+wandb/
+hf_success_dataset/
+hf_success_vl_dataset/
+
+# LKH solver runtime files
+src/fuel_planner/utils/lkh_tsp_solver/resource/single.par
+src/fuel_planner/utils/lkh_tsp_solver/resource/single.tsp
+src/fuel_planner/utils/lkh_tsp_solver/resource/single.txt
+src/fuel_planner/utils/lkh_tsp_solver/resource/*.csv
+src/fuel_planner/utils/lkh_tsp_solver/resource/rl_*.txt
+
+# Generated media and reports from experiments
+*_snapshots/
+vla_snapshots/
+*.gif
+*.mp4

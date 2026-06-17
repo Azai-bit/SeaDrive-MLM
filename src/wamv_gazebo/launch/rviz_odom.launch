@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- 使用预配置的 RViz 配置文件启动 RViz -->
+  <!-- Fixed Frame 已设置为 'odom' -->
+  <!-- 已添加 Odometry 显示项，订阅 /myboat/odom topic -->
+  
+  <arg name="rviz_config" default="$(find wamv_gazebo)/../../myboat_odom.rviz"/>
+  
+  <node type="rviz" name="rviz" pkg="rviz" 
+        args="-d $(arg rviz_config)" output="screen"/>
+
+</launch>

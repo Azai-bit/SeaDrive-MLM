@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="usv_dynamics_gazebo" params="name width:=0.968 length:=1.782">
+    <gazebo>
+      <plugin name="usv_dynamics_${name}" filename="libmyboat_dynamics_plugin.so">
+        <bodyName>myboat/base_link</bodyName>
+
+        <waterLevel>$(arg waterLevel)</waterLevel>
+        <waterDensity>$(arg waterDensity)</waterDensity>
+
+        <xDotU>$(arg xDotU)</xDotU>
+        <yDotV>$(arg yDotV)</yDotV>
+        <zDotW>$(arg zDotW)</zDotW>
+        <kDotP>$(arg kDotP)</kDotP>
+        <mDotQ>$(arg mDotQ)</mDotQ>
+        <nDotR>$(arg nDotR)</nDotR>
+
+        <xU>$(arg xU)</xU>
+        <xUU>$(arg xUU)</xUU>
+        <yV>$(arg yV)</yV>
+        <yVV>$(arg yVV)</yVV>
+        <zW>$(arg zW)</zW>
+        <zWW>$(arg zWW)</zWW>
+        <kP>$(arg kP)</kP>
+        <kPP>$(arg kPP)</kPP>
+        <mQ>$(arg mQ)</mQ>
+        <mQQ>$(arg mQQ)</mQQ>
+        <nR>$(arg nR)</nR>
+        <nRR>$(arg nRR)</nRR>
+
+        <hullRadius>$(arg hullRadius)</hullRadius>
+        <boatWidth>$(arg boatWidth)</boatWidth>
+        <boatLength>$(arg boatLength)</boatLength>
+        <length_n>3</length_n>
+
+
+
+        <wave_model>flat</wave_model>
+
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+</robot>

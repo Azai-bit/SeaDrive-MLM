@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+
+  
+  <node pkg="myboat_gazebo" type="myboat_teleop.py" name="myboat_teleop" output="screen" />
+
+
+  
+</launch>

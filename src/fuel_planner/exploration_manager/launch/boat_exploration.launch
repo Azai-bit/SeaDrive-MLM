@@ -1,0 +1,223 @@
+<launch>
+  <node name="rvizvisualisation" pkg="rviz" type="rviz" output="log" args="-d $(find plan_manage)/config/traj.rviz" />
+  <node pkg="tf" type="static_transform_publisher" name="tf_53" args="0 0 0 0 0 0 world navigation 100" />
+  <!-- 地图尺寸需覆盖整个探索 box，否则多数点云会被判为“不在图内”无法融合 -->
+  <!-- 当前只探索 50x50 区域，中心对齐到船的初始位置 (-450, 260) -->
+  <arg name="map_size_x" value="50.0"/>
+  <arg name="map_size_y" value="50.0"/>
+  <arg name="map_size_z" value="2.0"/>
+
+  <arg name="init_x" value="-450.0"/>
+  <arg name="init_y" value="260.0"/>
+  <arg name="init_z" value="0.5"/> 
+  <arg name="usv_fixed_z" value="0.5"/>
+
+  <!-- 调试开关：是否启用测试 PositionCommand 发布器 -->
+  <arg name="enable_debug_pos_cmd" value="false"/>
+
+  <!-- topic of your odometry such as VIO or LIO -->
+  <!-- <arg name="odom_topic" value="/state_ukf/odom" /> -->
+  <arg name="odom_topic" value="/myboat/odom" />
+
+  <!-- 从 Gazebo 获取 myboat 里程计 -->
+  <include file="$(find wamv_gazebo)/launch/odom_publisher.launch">
+    <arg name="model_name" value="myboat"/>
+    <arg name="odom_topic" value="/myboat/odom"/>
+  </include>
+
+  <!-- 简单转发里程计到 /odom_world，供部分旧代码使用 -->
+  <node pkg="myboat_gazebo"
+        type="myboat_odom_relay.py"
+        name="myboat_odom_relay"
+        output="log">
+    <param name="in_topic" value="/myboat/odom"/>
+    <param name="out_topic" value="/odom_world"/>
+  </node>
+
+  <!-- Debug: 无论探索规划是否成功，都向 /planning/pos_cmd 发布简单的测试 PositionCommand，
+       以验证 exploration_manager -> traj_server -> /planning/pos_cmd -> exploration_to_myboat -> /cmd_vel 的链路 -->
+  <node pkg="myboat_gazebo"
+        type="test_pos_cmd_publisher"
+        name="test_pos_cmd_publisher"
+        output="log"
+        if="$(arg enable_debug_pos_cmd)">
+    <param name="odom_topic" value="/myboat/odom"/>
+    <param name="pos_cmd_topic" value="/planning/pos_cmd"/>
+    <param name="forward_distance" value="5.0"/>
+    <param name="publish_rate" value="5.0"/>
+  </node>
+  <!-- main algorithm params -->
+  <include file="$(find exploration_manager)/launch/algorithm.xml">
+
+    <arg name="map_size_x_" value="$(arg map_size_x)"/>
+    <arg name="map_size_y_" value="$(arg map_size_y)"/>
+    <arg name="map_size_z_" value="$(arg map_size_z)"/>
+
+    <arg name="box_min_x" value="-475.0"/>
+    <arg name="box_max_x" value="-425.0"/>
+    <arg name="box_min_y" value="235.0"/>
+    <arg name="box_max_y" value="285.0"/>
+    
+    <!-- z 方向包含稍低于水面的区域，避免起始 z=-0.05 被视为出界 -->
+    <arg name="box_min_z" value="0.0"/>
+    <arg name="box_max_z" value="2.0"/>
+
+    <arg name="odometry_topic" value="$(arg odom_topic)"/>
+        <!-- sensor pose: transform of camera frame in the world frame -->
+    <!-- 使用由 myboat 里程计转换得到的 /map_ros/pose -->
+    <arg name="sensor_pose_topic" value="/map_ros/pose"/>
+
+    <!-- depth topic: depth image, 640x480 by default -->
+    <!-- cloud topic: point cloud measurement  -->
+    <!-- subscribe ONLY TO ONE of the two topics -->
+    <!-- 当前联合仿真使用 lidar 点云建图，不使用深度图；留一个占位 topic 避免把 RGB 图像误当深度图。 -->
+    <arg name="depth_topic" value="/map_ros/unused_depth"/>
+    <!-- 建图优先使用原始雷达点云。水面噪声可保留给单独感知实验，但不应直接喂给占据地图。 -->
+    <arg name="cloud_topic" value="/myboat/sensors/lidar_wamv/points_with_water"/>
+
+    <!-- intrinsic params of the depth camera -->
+    <arg name="cx" value="321.04638671875"/>
+    <arg name="cy" value="243.44969177246094"/>
+    <arg name="fx" value="387.229248046875"/>
+    <arg name="fy" value="387.229248046875"/>
+
+    <!-- maximum velocity and acceleration the boat will reach (tuned for myboat) -->
+    <!-- 提高规划速度上限，让路径本身“更快”，减轻船体大幅超前后再回追的问题 -->
+    <arg name="max_vel" value="0.6" />
+    <arg name="max_acc" value="0.3" />
+    <arg name="usv_fixed_z" value="$(arg usv_fixed_z)"/>
+  </include>
+
+  <!-- trajectory server：适当增大前馈时间，让规划器一次性给出更长航段 -->
+  <node pkg="plan_manage" name="traj_server" type="traj_server" output="screen">
+    <remap from="/position_cmd" to="planning/pos_cmd"/>
+
+    <remap from="/odom_world" to="$(arg odom_topic)"/>
+    <param name="traj_server/time_forward" value="2.0" type="double"/>
+    <param name="traj_server/pub_traj_id" value="4" type="int"/>
+    <param name="traj_server/init_x" value="$(arg init_x)" type="double"/>
+    <param name="traj_server/init_y" value="$(arg init_y)" type="double"/>
+    <param name="traj_server/init_z" value="$(arg init_z)" type="double"/>
+
+    <!-- Planning-side PD-like yaw damping to suppress turning overshoot -->
+    <param name="yaw_pd_enable" value="true" type="bool"/>
+    <param name="yaw_pd_kp" value="0.0" type="double"/>
+    <param name="yaw_pd_kd" value="0.3" type="double"/>
+    <param name="yaw_pd_min_scale" value="0.5" type="double"/>
+
+    <param name="perception_utils/top_angle" value="0.56125" type="double"/>
+    <param name="perception_utils/left_angle" value="0.69222" type="double"/>
+    <param name="perception_utils/right_angle" value="0.68901" type="double"/>
+    <param name="perception_utils/max_dist" value="4.5" type="double"/>
+    <param name="perception_utils/vis_dist" value="1.0" type="double"/>
+    
+
+  </node>
+
+  <node pkg="waypoint_generator" name="waypoint_generator" type="waypoint_generator" output="log">
+    <remap from="~odom" to="$(arg odom_topic)"/>        
+    <remap from="~goal" to="/move_base_simple/goal"/>
+    <remap from="~traj_start_trigger" to="/traj_start_trigger" />
+    <param name="waypoint_type" value="point"/>    
+  </node>
+
+  <!-- use simulator -->
+  <!-- <include file="$(find exploration_manager)/launch/simulator.xml">
+    <arg name="map_size_x_" value="$(arg map_size_x)"/>
+    <arg name="map_size_y_" value="$(arg map_size_y)"/>
+    <arg name="map_size_z_" value="$(arg map_size_z)"/>
+
+    <arg name="init_x" value="$(arg init_x)"/>
+    <arg name="init_y" value="$(arg init_y)"/>
+    <arg name="init_z" value="$(arg init_z)"/>
+
+    <arg name="odometry_topic" value="$(arg odom_topic)" />
+    <arg name="c_num" value="0"/>
+    <arg name="p_num" value="130"/>
+  </include> -->
+
+  <!-- Exploration to Myboat adapter: convert planning commands to boat control -->
+  <include file="$(find myboat_gazebo)/launch/exploration_to_myboat.launch"/>
+
+  <!-- 将 /myboat/odom 转换为 exploration 所需的 /map_ros/pose -->
+  <node pkg="myboat_gazebo"
+        type="odom_to_pose.py"
+        name="odom_to_pose"
+        output="log">
+    <param name="odom_topic" value="$(arg odom_topic)"/>
+    <param name="pose_topic" value="/map_ros/pose"/>
+  </node>
+
+  <!-- 根据 /myboat/odom 发布 TF: world -> myboat/base_link，连接 TF 树 -->
+  <node pkg="myboat_gazebo"
+        type="myboat_odom_tf.py"
+        name="myboat_odom_tf"
+        output="log">
+    <param name="odom_topic" value="/myboat/odom"/>
+    <param name="world_frame" value="world"/>
+    <param name="base_frame" value="myboat/base_link"/>
+  </node>
+
+  <!-- 使用原始 odom_visualization 包，把 UAV 模型当作 myboat 在 RViz 中的替身 -->
+  <node pkg="odom_visualization"
+        name="odom_visualization"
+        type="odom_visualization"
+        output="log">
+    <!-- 将私有 ~odom 话题重映射到 myboat 的里程计 -->
+    <remap from="~odom" to="/myboat/odom"/>
+
+    <!-- 颜色和尺度可按需调整，这里用蓝色机体 -->
+    <param name="color/a" value="1.0"/>
+    <param name="color/r" value="1.0"/>
+    <param name="color/g" value="0.6"/>
+    <param name="color/b" value="0.0"/>
+    <param name="covariance_scale" value="100.0"/>
+    <param name="robot_scale" value="0.0015"/>
+    <param name="frame_id" value="world"/>
+    <param name="mesh_z_offset" value="0.5"/>
+  </node>
+
+  <!-- 为 LIDAR 点云提供 TF 别名：myboat/lidar_wamv_link -> myboat/sensors/lidar_wamv_link -->
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="tf_lidar_myboat_alias"
+        args="0 0 0 0 0 0 myboat/sensors/lidar_wamv_link myboat/lidar_wamv_link 100"/>
+
+  <!-- 连接 myboat/base_link 与 LIDAR 安装点，使 LIDAR TF 树挂到 world 上 -->
+  <!-- 这里使用与 URDF 中 x,y,z 近似的安装位置，仅用于可视化和 TF 连通性 -->
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="tf_lidar_myboat_mount"
+        args="-0.4 0 0.8 0 0 0 myboat/base_link myboat/sensors/lidar_wamv_link 100"/>
+
+  <!-- LIDAR 点云水面噪声仿真节点：保留作独立实验用，不作为默认建图输入 -->
+  <node pkg="myboat_gazebo"
+        type="lidar_water_noise_node"
+        name="lidar_water_noise_node"
+        output="log">
+    <param name="input_topic"  value="/myboat/sensors/lidar_wamv/points"/>
+    <param name="output_topic" value="/myboat/sensors/lidar_wamv/points_with_water"/>
+
+    <!-- 与仿真 world 中的水面高度一致（myocean1.world 默认 0） -->
+    <param name="water_level" value="0.0"/>
+
+    <!-- 仅在 5m 内添加近水面噪声 -->
+    <param name="water_lidar_max_range" value="10.0"/>
+    <!-- 调整此密度可以让水面点云更稀疏/更密集 -->
+    <param name="water_lidar_density" value="100"/>
+    <!-- 垂直方向抖动，用于模拟水面起伏和测量噪声 -->
+    <param name="water_lidar_z_std" value="0.02"/>
+    <!-- 在前方 180 度范围内添加噪声点 -->
+    <param name="water_lidar_fov_deg" value="180.0"/>
+    <!-- 默认关闭水面随机噪声，避免雷达点云观感“乱跳”；需要时可手动打开 -->
+    <param name="enable_water_noise" value="true"/>
+  </node>
+
+  <!-- 连接 myboat/base_link 与 IMU 安装点，使 IMU 坐标系出现在 TF 树中 -->
+  <!-- 与 URDF 中 wamv_imu 默认参数一致：x=0, y=-0.2, z=0.3 -->
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="tf_imu_myboat_mount"
+        args="0 -0.2 0.3 0 0 0 myboat/base_link myboat/imu_wamv_link 100"/>
+
+</launch>
